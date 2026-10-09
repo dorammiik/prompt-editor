@@ -1,6 +1,6 @@
 # Character-chat Prompt Editor
 
-**Language: [한국어](https://github.com/dorammiik/prompt-editor/blob/main/README%28ko%29.md) | English**
+Language: [한국어](https://github.com/dorammiik/prompt-editor/blob/main/README%28ko%29.md) | **English**
 
 📄 [기획안](https://app.notion.com/p/Character-chat-Prompt-Editor-3a9856fc07af804e8f22f3028575fcdf?source=copy_link) | 📄 [Specification (EN)](https://app.notion.com/p/Product-Specification-Character-Chat-Prompt-Editor-a79856fc07af822ca08c8191278489a4?source=copy_link) | 📚 [Dataset (KO)](https://docs.google.com/spreadsheets/d/17gqW3UED_Fl9mr9UPCzbobPYpJAL6mkP3xsH6ADfFuo/edit?usp=sharing) | 📚 [Dataset (EN)](https://docs.google.com/spreadsheets/d/1tIvcCV1qE68o7VNaVK0bi4ROC-P8qqy-WTiaqtXHI9o/edit?usp=sharing)
 
