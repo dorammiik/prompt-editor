@@ -1,0 +1,30 @@
+# Python 가상환경 및 캐시
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# 환경변수와 인증 파일
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Mac 임시 파일
+.DS_Store
+._*
+
+# 개인 편집기 설정
+.vscode/
+.idea/
+*.code-workspace
+
+# 개인 서버 배포 스크립트
+/deploy.sh
+
+# 실행 로그
+*.log

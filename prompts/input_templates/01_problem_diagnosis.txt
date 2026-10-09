@@ -1,0 +1,18 @@
+
+---
+
+## 개선 요청 사항
+
+{improvement}
+
+## 원본 프롬프트
+
+{og_prompt}
+
+## 원본 인트로 대화
+
+{og_intro}
+
+## 원본 대화
+
+{og_chatHistory}

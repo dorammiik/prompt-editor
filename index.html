@@ -1,0 +1,3623 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>채팅 프롬프트 피드백</title>
+
+  <style>
+    :root {
+      color-scheme: light;
+      --background: #f6f7fb;
+      --surface: #ffffff;
+      --text: #191b23;
+      --muted: #6f7280;
+      --line: #e5e7ee;
+      --accent: #6f52ed;
+      --accent-soft: #f1edff;
+      --focus: rgba(111, 82, 237, 0.16);
+      --warning-bg: #fff9e8;
+      --warning-text: #6a5320;
+      --danger: #c4384f;
+      --danger-soft: #fff0f3;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top left, rgba(111, 82, 237, 0.08), transparent 27rem),
+        var(--background);
+      color: var(--text);
+      font-family:
+        Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      line-height: 1.6;
+      word-break: keep-all;
+    }
+
+    button,
+    textarea {
+      font: inherit;
+    }
+
+    .page-shell {
+      position: relative;
+      width: min(100% - 40px, 900px);
+      margin: 0 auto;
+      padding: 72px 0 96px;
+    }
+
+    .language-switcher {
+      position: absolute;
+      top: 22px;
+      right: 0;
+      display: inline-flex;
+      padding: 3px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 8px 24px rgba(34, 31, 48, 0.06);
+    }
+
+    .language-button {
+      min-width: 64px;
+      padding: 6px 10px;
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 750;
+      cursor: pointer;
+    }
+
+    .language-button[aria-pressed="true"] {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .language-button:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    .language-button:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px var(--focus);
+    }
+
+    .page-header {
+      margin-bottom: 30px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 14px;
+      padding: 6px 11px;
+      border: 1px solid #ddd6ff;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: #5940c8;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .eyebrow::before {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      content: "";
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(30px, 5vw, 42px);
+      line-height: 1.22;
+      letter-spacing: -0.045em;
+    }
+
+    .header-description {
+      max-width: 680px;
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 16px;
+      letter-spacing: -0.015em;
+    }
+
+    .example-load-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      margin-top: 18px;
+      padding: 9px 15px;
+      border: 1px solid #d8d0ff;
+      border-radius: 11px;
+      background: #fff;
+      color: #5940c8;
+      font-size: 14px;
+      font-weight: 750;
+      letter-spacing: -0.015em;
+      cursor: pointer;
+      transition:
+        border-color 160ms ease,
+        background-color 160ms ease,
+        box-shadow 160ms ease,
+        transform 160ms ease;
+    }
+
+    .example-load-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .example-load-actions .example-load-button {
+      margin-top: 0;
+    }
+
+    .example-load-button:hover {
+      border-color: #b9abff;
+      background: var(--accent-soft);
+      transform: translateY(-1px);
+    }
+
+    .example-load-button:focus-visible {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px var(--focus);
+    }
+
+    .example-load-button:disabled {
+      cursor: wait;
+      opacity: 0.6;
+      transform: none;
+    }
+
+    .form-card {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: var(--surface);
+      box-shadow: 0 18px 50px rgba(34, 31, 48, 0.07);
+    }
+
+    .form-section {
+      padding: 34px 36px 38px;
+    }
+
+    .form-section + .form-section {
+      border-top: 1px solid var(--line);
+    }
+
+    .section-heading {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 8px;
+    }
+
+    .section-number {
+      display: grid;
+      flex: 0 0 auto;
+      width: 30px;
+      height: 30px;
+      margin-top: 1px;
+      place-items: center;
+      border-radius: 9px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 21px;
+      line-height: 1.45;
+      letter-spacing: -0.035em;
+    }
+
+    .section-description {
+      margin: 0 0 18px 44px;
+      color: var(--muted);
+      font-size: 15px;
+      letter-spacing: -0.012em;
+    }
+
+    .section-description strong {
+      color: #3b3d47;
+      font-weight: 700;
+    }
+
+    .textarea-wrap {
+      position: relative;
+      margin-left: 44px;
+    }
+
+    textarea {
+      display: block;
+      width: 100%;
+      min-height: 150px;
+      padding: 17px 18px 42px;
+      resize: vertical;
+      border: 1px solid #d9dbe4;
+      border-radius: 13px;
+      outline: none;
+      background: #fcfcfd;
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.7;
+      letter-spacing: -0.012em;
+      transition:
+        border-color 160ms ease,
+        background-color 160ms ease,
+        box-shadow 160ms ease;
+    }
+
+    textarea::placeholder {
+      color: #a0a3af;
+      opacity: 1;
+    }
+
+    textarea:hover {
+      border-color: #bfc1cc;
+    }
+
+    textarea:focus {
+      border-color: var(--accent);
+      background: #fff;
+      box-shadow: 0 0 0 4px var(--focus);
+    }
+
+    #prompt,
+    #intro,
+    #chat-history {
+      min-height: 230px;
+    }
+
+    .character-count {
+      position: absolute;
+      right: 14px;
+      bottom: 11px;
+      color: #a0a3af;
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+      pointer-events: none;
+    }
+
+    .notice {
+      display: flex;
+      gap: 11px;
+      margin: 0 0 18px 44px;
+      padding: 14px 16px;
+      border: 1px solid #f1e3ae;
+      border-radius: 12px;
+      background: var(--warning-bg);
+      color: var(--warning-text);
+      font-size: 14px;
+    }
+
+    .notice-icon {
+      flex: 0 0 auto;
+      line-height: 1.5;
+    }
+
+    .notice strong {
+      display: block;
+      margin-bottom: 2px;
+      font-weight: 800;
+    }
+
+    .notice ul {
+      margin: 4px 0 0;
+      padding-left: 19px;
+    }
+
+    .form-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 22px 36px;
+      border-top: 1px solid var(--line);
+      background: #fafafe;
+    }
+
+    .footer-message {
+      min-width: 0;
+    }
+
+    .footer-copy {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .form-error {
+      margin: 5px 0 0;
+      color: var(--danger);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .form-actions {
+      display: flex;
+      flex: 0 0 auto;
+      gap: 10px;
+    }
+
+    .clear-button,
+    .submit-button {
+      flex: 0 0 auto;
+      min-height: 44px;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition:
+        border-color 160ms ease,
+        color 160ms ease,
+        background-color 160ms ease,
+        transform 160ms ease,
+        box-shadow 160ms ease;
+    }
+
+    .clear-button {
+      border: 1px solid #d9dbe4;
+      background: #fff;
+      color: #51535e;
+    }
+
+    .clear-button:hover {
+      border-color: #bbb3e9;
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .submit-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      min-width: 154px;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 7px 18px rgba(111, 82, 237, 0.22);
+    }
+
+    .submit-button:hover:not(:disabled) {
+      border-color: #5f43db;
+      background: #5f43db;
+      transform: translateY(-1px);
+      box-shadow: 0 9px 22px rgba(111, 82, 237, 0.27);
+    }
+
+    .submit-button:disabled {
+      cursor: wait;
+      opacity: 0.75;
+    }
+
+    .clear-button:focus-visible,
+    .submit-button:focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    .spinner {
+      display: none;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.42);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 700ms linear infinite;
+    }
+
+    .submit-button[aria-busy="true"] .spinner {
+      display: block;
+    }
+
+    .result-card {
+      margin-top: 26px;
+      overflow: hidden;
+      border: 1px solid #dcd5ff;
+      border-radius: 22px;
+      background: var(--surface);
+      box-shadow: 0 18px 50px rgba(34, 31, 48, 0.07);
+    }
+
+    .result-header {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      padding: 24px 30px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(135deg, #f8f6ff, #fcfbff);
+    }
+
+    .result-icon {
+      display: grid;
+      flex: 0 0 auto;
+      width: 36px;
+      height: 36px;
+      place-items: center;
+      border-radius: 11px;
+      background: var(--accent-soft);
+      font-size: 18px;
+    }
+
+    .result-title {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: -0.035em;
+    }
+
+    .result-description {
+      margin: 2px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .result-content {
+      min-height: 180px;
+      margin: 0;
+      padding: 30px;
+      overflow-wrap: anywhere;
+      color: #292b34;
+      font-family: inherit;
+      font-size: 15px;
+      line-height: 1.8;
+      white-space: pre-wrap;
+    }
+
+    .result-page-header {
+      padding: 34px 36px 30px;
+      border-bottom: 1px solid var(--line);
+      background:
+        radial-gradient(circle at top right, rgba(111, 82, 237, 0.13), transparent 17rem),
+        linear-gradient(135deg, #f8f6ff, #fff);
+    }
+
+    .result-page-title {
+      margin: 0;
+      font-size: clamp(27px, 5vw, 34px);
+      letter-spacing: -0.045em;
+    }
+
+    .result-page-description {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .result-output-section {
+      padding: 31px 36px 35px;
+    }
+
+    .result-output-section + .result-output-section {
+      border-top: 1px solid var(--line);
+    }
+
+    .result-output-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .result-output-title {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: -0.035em;
+    }
+
+    .copy-button {
+      display: inline-flex;
+      flex: 0 0 auto;
+      min-height: 36px;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 11px;
+      border: 1px solid #dcd8ee;
+      border-radius: 9px;
+      background: #fff;
+      color: #555866;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition:
+        border-color 160ms ease,
+        background-color 160ms ease,
+        color 160ms ease;
+    }
+
+    .copy-button:hover {
+      border-color: #bdb4ed;
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .copy-button:focus-visible,
+    .expand-button:focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    .output-preview {
+      position: relative;
+      max-height: calc(14px * 1.8 * 10 + 48px);
+      overflow: hidden;
+      border: 1px solid #e0e1e8;
+      border-radius: 13px;
+      background: #fbfbfd;
+    }
+
+    .output-preview.is-expanded {
+      max-height: none;
+    }
+
+    .output-preview.has-overflow:not(.is-expanded)::after {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      height: 74px;
+      background: linear-gradient(transparent, #fbfbfd 82%);
+      content: "";
+      pointer-events: none;
+    }
+
+    .output-text {
+      margin: 0;
+      padding: 24px;
+      overflow-wrap: anywhere;
+      color: #292b34;
+      font-family: inherit;
+      font-size: 14px;
+      line-height: 1.8;
+      white-space: pre-wrap;
+    }
+
+    .expand-button {
+      display: block;
+      margin: 12px auto 0;
+      padding: 6px 13px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .expand-button:hover {
+      background: var(--accent-soft);
+    }
+
+    .test-section {
+      padding: 36px;
+      border-top: 1px solid #dcd5ff;
+      background:
+        radial-gradient(circle at top left, rgba(111, 82, 237, 0.09), transparent 22rem),
+        #faf9ff;
+    }
+
+    .test-heading {
+      margin-bottom: 29px;
+    }
+
+    .test-title {
+      margin: 0;
+      font-size: 24px;
+      letter-spacing: -0.04em;
+    }
+
+    .test-description {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .test-field + .test-field {
+      margin-top: 26px;
+    }
+
+    .test-label {
+      display: block;
+      margin-bottom: 5px;
+      color: #2d2f38;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .test-help {
+      margin: 0 0 12px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .test-textarea-wrap {
+      position: relative;
+    }
+
+    #test-chat-context,
+    #test-user-input {
+      min-height: 180px;
+      background: #fff;
+    }
+
+    .test-data-note {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin: 22px 0 0;
+      color: #767986;
+      font-size: 12px;
+    }
+
+    .test-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-top: 24px;
+    }
+
+    .test-submit-button {
+      display: inline-flex;
+      min-width: 180px;
+      min-height: 48px;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      margin-left: auto;
+      padding: 12px 22px;
+      border: 1px solid var(--accent);
+      border-radius: 11px;
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 7px 18px rgba(111, 82, 237, 0.22);
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      transition:
+        transform 160ms ease,
+        background-color 160ms ease,
+        box-shadow 160ms ease;
+    }
+
+    .test-submit-button:hover:not(:disabled) {
+      background: #5f43db;
+      transform: translateY(-1px);
+      box-shadow: 0 9px 22px rgba(111, 82, 237, 0.27);
+    }
+
+    .test-submit-button:disabled {
+      cursor: wait;
+      opacity: 0.72;
+    }
+
+    .test-submit-button[aria-busy="true"] .spinner {
+      display: block;
+    }
+
+    .test-submit-button:focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    .test-error {
+      flex: 1;
+      margin: 0;
+      color: #c43f51;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .evaluation-panel {
+      overflow: hidden;
+      border: 1px solid #dcd5ff;
+      border-radius: 24px;
+      background: #fff;
+      box-shadow: 0 22px 65px rgba(34, 31, 48, 0.09);
+    }
+
+    .evaluation-header {
+      padding: 38px 38px 32px;
+      border-bottom: 1px solid var(--line);
+      background:
+        radial-gradient(circle at top right, rgba(111, 82, 237, 0.15), transparent 20rem),
+        linear-gradient(135deg, #f8f6ff, #fff);
+    }
+
+    .evaluation-title {
+      margin: 0;
+      font-size: clamp(29px, 5vw, 38px);
+      letter-spacing: -0.05em;
+    }
+
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 24px;
+      padding: 34px 38px 40px;
+    }
+
+    .comparison-column {
+      min-width: 0;
+    }
+
+    .comparison-column-title {
+      margin: 0;
+      font-size: 24px;
+      letter-spacing: -0.04em;
+    }
+
+    .comparison-column-description {
+      margin: 7px 0 20px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .dialogue-card + .dialogue-card {
+      margin-top: 14px;
+    }
+
+    .dialogue-label {
+      display: block;
+      margin: 0 0 7px;
+      color: #555866;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .dialogue-preview {
+      max-height: calc(14px * 1.8 * 3 + 38px);
+      background: #fbfbfd;
+    }
+
+    .dialogue-preview .output-text {
+      padding: 19px;
+    }
+
+    .dialogue-preview.has-overflow:not(.is-expanded)::after {
+      height: 48px;
+    }
+
+    .report-section {
+      padding: 38px;
+      border-top: 1px solid var(--line);
+      background: #fcfcfe;
+    }
+
+    .report-title {
+      margin: 0 0 22px;
+      font-size: 25px;
+      letter-spacing: -0.04em;
+    }
+
+    .report-table-scroll {
+      overflow-x: auto;
+      border: 1px solid #dedfe7;
+      border-radius: 13px;
+      background: #fff;
+    }
+
+    .report-table {
+      width: 100%;
+      min-width: 1500px;
+      border-collapse: collapse;
+      color: #343640;
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .report-table th,
+    .report-table td {
+      min-width: 118px;
+      padding: 13px 12px;
+      border-right: 1px solid #e5e6ec;
+      border-bottom: 1px solid #e5e6ec;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .report-table th:first-child,
+    .report-table td:first-child {
+      min-width: 150px;
+      background: #faf9ff;
+      font-weight: 800;
+    }
+
+    .report-table th {
+      background: #f5f3fc;
+      color: #454752;
+      font-weight: 800;
+    }
+
+    .report-table tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .report-table th:last-child,
+    .report-table td:last-child {
+      border-right: 0;
+    }
+
+    .report-summary {
+      margin-top: 27px;
+    }
+
+    .report-subtitle {
+      margin: 0 0 12px;
+      font-size: 18px;
+      letter-spacing: -0.03em;
+    }
+
+    .report-list {
+      margin: 0;
+      padding-left: 20px;
+      color: #4d505c;
+      font-size: 14px;
+      line-height: 1.75;
+    }
+
+    .report-list li + li {
+      margin-top: 5px;
+    }
+
+    .verdict-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 28px;
+    }
+
+    .verdict-card {
+      padding: 20px;
+      border: 1px solid #e1e2e8;
+      border-radius: 13px;
+      background: #fff;
+    }
+
+    .verdict-card-title {
+      margin: 0 0 12px;
+      font-size: 17px;
+      letter-spacing: -0.03em;
+    }
+
+    .verdict-label {
+      display: inline-flex;
+      margin-bottom: 10px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .verdict-rationale {
+      margin: 0;
+      color: #555866;
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    .evaluation-navigation {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 24px 38px 8px;
+    }
+
+    .evaluation-navigation[hidden] {
+      display: none;
+    }
+
+    .evaluation-navigation-button {
+      min-width: 160px;
+      min-height: 46px;
+      padding: 11px 22px;
+      border-radius: 11px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      transition:
+        transform 160ms ease,
+        border-color 160ms ease,
+        background-color 160ms ease,
+        box-shadow 160ms ease;
+    }
+
+    .evaluation-navigation-button:hover {
+      transform: translateY(-1px);
+    }
+
+    .evaluation-back-button {
+      border: 1px solid #d8d9e1;
+      background: #fff;
+      color: #4d505c;
+    }
+
+    .evaluation-back-button:hover {
+      border-color: #bdb4ed;
+      background: #faf9ff;
+    }
+
+    .evaluation-home-button {
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 7px 18px rgba(111, 82, 237, 0.2);
+    }
+
+    .evaluation-home-button:hover {
+      background: #5f43db;
+      box-shadow: 0 9px 22px rgba(111, 82, 237, 0.25);
+    }
+
+    .evaluation-navigation-button:focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    .loading-screen {
+      display: grid;
+      min-height: calc(100vh - 168px);
+      place-items: center;
+      padding: 28px 0 72px;
+    }
+
+    .loading-card {
+      width: min(100%, 560px);
+      padding: 52px 44px 46px;
+      border: 1px solid #e0dcf5;
+      border-radius: 26px;
+      background:
+        radial-gradient(circle at 50% 4%, rgba(111, 82, 237, 0.1), transparent 16rem),
+        var(--surface);
+      box-shadow: 0 22px 60px rgba(34, 31, 48, 0.09);
+      text-align: center;
+    }
+
+    .loading-visual {
+      position: relative;
+      width: 196px;
+      height: 196px;
+      margin: 0 auto 24px;
+    }
+
+    .loading-state-image {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border: 1px solid rgba(111, 82, 237, 0.12);
+      border-radius: 24px;
+      background: #f7f5fc;
+      box-shadow: 0 12px 30px rgba(82, 63, 151, 0.13);
+      object-fit: cover;
+    }
+
+    .loading-orbit {
+      position: absolute;
+      inset: 1px 8px 5px;
+      border: 1px solid rgba(111, 82, 237, 0.16);
+      border-radius: 50%;
+      animation: orbit-spin 4.2s linear infinite;
+    }
+
+    .loading-orbit::before,
+    .loading-orbit::after {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border: 4px solid #fff;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 3px 10px rgba(111, 82, 237, 0.3);
+      content: "";
+    }
+
+    .loading-orbit::before {
+      top: 17px;
+      right: 13px;
+    }
+
+    .loading-orbit::after {
+      bottom: 13px;
+      left: 17px;
+      background: #b5a7ff;
+    }
+
+    .loading-document {
+      position: absolute;
+      top: 18px;
+      left: 50%;
+      width: 94px;
+      height: 116px;
+      padding: 28px 17px 16px;
+      overflow: hidden;
+      border: 1px solid #ded9f5;
+      border-radius: 15px;
+      background: #fff;
+      box-shadow: 0 15px 32px rgba(50, 42, 86, 0.14);
+      transform: translateX(-50%);
+      animation: document-float 2.4s ease-in-out infinite;
+    }
+
+    .loading-document::before {
+      position: absolute;
+      top: 0;
+      left: -70%;
+      width: 48%;
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(111, 82, 237, 0.12),
+        transparent
+      );
+      content: "";
+      animation: document-scan 1.8s ease-in-out infinite;
+    }
+
+    .loading-document-icon {
+      position: absolute;
+      top: 11px;
+      left: 15px;
+      width: 20px;
+      height: 20px;
+      color: var(--accent);
+    }
+
+    .loading-line {
+      display: block;
+      height: 7px;
+      margin-bottom: 10px;
+      border-radius: 999px;
+      background: #e8e5f7;
+      transform-origin: left;
+      animation: line-pulse 1.6s ease-in-out infinite;
+    }
+
+    .loading-line:nth-child(2) {
+      width: 100%;
+    }
+
+    .loading-line:nth-child(3) {
+      width: 76%;
+      animation-delay: 160ms;
+    }
+
+    .loading-line:nth-child(4) {
+      width: 90%;
+      animation-delay: 320ms;
+    }
+
+    .loading-line:nth-child(5) {
+      width: 58%;
+      animation-delay: 480ms;
+    }
+
+    .loading-spark {
+      position: absolute;
+      color: #8d76f5;
+      font-size: 18px;
+      line-height: 1;
+      animation: spark-pulse 1.8s ease-in-out infinite;
+    }
+
+    .loading-spark--one {
+      top: 4px;
+      right: 23px;
+    }
+
+    .loading-spark--two {
+      bottom: 13px;
+      left: 18px;
+      font-size: 13px;
+      animation-delay: 600ms;
+    }
+
+    .loading-kicker {
+      display: inline-block;
+      margin-bottom: 10px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+    }
+
+    .loading-title {
+      margin: 0;
+      font-size: clamp(27px, 5vw, 34px);
+      line-height: 1.3;
+      letter-spacing: -0.045em;
+    }
+
+    .loading-description {
+      min-height: 26px;
+      margin: 12px 0 26px;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .loading-dots {
+      display: inline-flex;
+      width: 22px;
+      justify-content: flex-start;
+      text-align: left;
+    }
+
+    .loading-dots::after {
+      content: "";
+      animation: loading-dots 1.4s steps(4, end) infinite;
+    }
+
+    .progress-track {
+      position: relative;
+      width: min(100%, 360px);
+      height: 7px;
+      margin: 0 auto;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #ebe8f7;
+    }
+
+    .progress-track::after {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: -42%;
+      width: 42%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #8f78f5, var(--accent), #a895ff);
+      box-shadow: 0 0 14px rgba(111, 82, 237, 0.35);
+      content: "";
+      animation: progress-slide 1.65s ease-in-out infinite;
+    }
+
+    .loading-note {
+      margin: 18px 0 0;
+      color: #9295a2;
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    .required-prompts-field {
+      margin-top: 30px;
+      padding-top: 28px;
+      border-top: 1px solid var(--line);
+      text-align: left;
+    }
+
+    .required-prompts-label {
+      display: block;
+      margin-bottom: 5px;
+      color: #30323b;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+    }
+
+    .required-prompts-help {
+      margin: 0 0 13px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .required-prompts-wrap {
+      position: relative;
+    }
+
+    #required-prompts {
+      min-height: 190px;
+      max-height: 370px;
+      padding: 15px 16px 40px;
+      background: #fbfaff;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .compile-actions {
+      margin-top: 13px;
+    }
+
+    .compile-button {
+      display: inline-flex;
+      width: 100%;
+      min-height: 48px;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      padding: 11px 18px;
+      border: 1px solid var(--accent);
+      border-radius: 11px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 800;
+      box-shadow: 0 8px 20px rgba(111, 82, 237, 0.22);
+      cursor: pointer;
+      transition:
+        opacity 160ms ease,
+        background-color 160ms ease,
+        transform 160ms ease,
+        box-shadow 160ms ease;
+    }
+
+    .compile-button:hover:not(:disabled) {
+      background: #5f43db;
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(111, 82, 237, 0.27);
+    }
+
+    .compile-button:disabled {
+      border-color: #c9c3e7;
+      background: #c9c3e7;
+      box-shadow: none;
+      cursor: wait;
+    }
+
+    .compile-button .spinner {
+      width: 17px;
+      height: 17px;
+    }
+
+    .compile-button[aria-busy="true"] .spinner {
+      display: block;
+    }
+
+    .compile-status {
+      margin: 10px 2px 0;
+      color: #878a96;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .compile-error {
+      margin: 10px 0 0;
+      color: var(--danger);
+      font-size: 13px;
+      font-weight: 700;
+      text-align: left;
+    }
+
+    .loading-card.is-ready .progress-track::after {
+      left: 0;
+      width: 100%;
+      animation: none;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes orbit-spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes document-float {
+      0%,
+      100% {
+        transform: translate(-50%, 0);
+      }
+      50% {
+        transform: translate(-50%, -6px);
+      }
+    }
+
+    @keyframes document-scan {
+      0% {
+        left: -70%;
+      }
+      55%,
+      100% {
+        left: 130%;
+      }
+    }
+
+    @keyframes line-pulse {
+      0%,
+      100% {
+        opacity: 0.52;
+        transform: scaleX(0.92);
+      }
+      50% {
+        opacity: 1;
+        transform: scaleX(1);
+      }
+    }
+
+    @keyframes spark-pulse {
+      0%,
+      100% {
+        opacity: 0.35;
+        transform: scale(0.75) rotate(-8deg);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.15) rotate(8deg);
+      }
+    }
+
+    @keyframes loading-dots {
+      0% {
+        content: "";
+      }
+      25% {
+        content: ".";
+      }
+      50% {
+        content: "..";
+      }
+      75%,
+      100% {
+        content: "...";
+      }
+    }
+
+    @keyframes progress-slide {
+      0% {
+        left: -42%;
+      }
+      100% {
+        left: 100%;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      .loading-orbit,
+      .loading-document,
+      .loading-document::before,
+      .loading-line,
+      .loading-spark,
+      .loading-dots::after,
+      .progress-track::after,
+      .spinner {
+        animation: none;
+      }
+
+      .loading-dots::after {
+        content: "...";
+      }
+
+      .progress-track::after {
+        left: 20%;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page-shell {
+        width: min(100% - 24px, 900px);
+        padding: 42px 0 60px;
+      }
+
+      .page-header {
+        padding: 0 4px;
+      }
+
+      .form-card {
+        border-radius: 17px;
+      }
+
+      .form-section {
+        padding: 27px 20px 30px;
+      }
+
+      .section-heading {
+        gap: 11px;
+      }
+
+      .section-number {
+        width: 28px;
+        height: 28px;
+      }
+
+      h2 {
+        font-size: 19px;
+      }
+
+      .section-description,
+      .textarea-wrap,
+      .notice {
+        margin-left: 0;
+      }
+
+      .section-description {
+        margin-top: 12px;
+      }
+
+      textarea {
+        padding-right: 15px;
+        padding-left: 15px;
+      }
+
+      .form-footer {
+        align-items: stretch;
+        flex-direction: column;
+        padding: 20px;
+      }
+
+      .form-actions {
+        flex-direction: column-reverse;
+      }
+
+      .clear-button,
+      .submit-button {
+        width: 100%;
+      }
+
+      .result-card {
+        border-radius: 17px;
+      }
+
+      .result-header,
+      .result-content {
+        padding: 22px 20px;
+      }
+
+      .result-page-header,
+      .result-output-section,
+      .test-section {
+        padding-right: 20px;
+        padding-left: 20px;
+      }
+
+      .result-output-heading {
+        align-items: flex-start;
+      }
+
+      .result-output-title {
+        font-size: 18px;
+      }
+
+      .output-text {
+        padding: 19px 17px;
+      }
+
+      .test-title {
+        font-size: 21px;
+      }
+
+      .test-actions {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .test-submit-button {
+        width: 100%;
+      }
+
+      .evaluation-header,
+      .comparison-grid,
+      .report-section,
+      .evaluation-navigation {
+        padding-right: 20px;
+        padding-left: 20px;
+      }
+
+      .comparison-grid,
+      .verdict-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .comparison-grid {
+        gap: 34px;
+      }
+
+      .evaluation-navigation-button {
+        min-width: 0;
+        flex: 1;
+        padding-right: 12px;
+        padding-left: 12px;
+      }
+
+      .loading-screen {
+        min-height: calc(100vh - 84px);
+        padding: 0 0 42px;
+      }
+
+      .loading-card {
+        padding: 42px 22px 38px;
+        border-radius: 20px;
+      }
+
+      .loading-visual {
+        margin-bottom: 17px;
+        transform: scale(0.9);
+      }
+
+      .required-prompts-field {
+        margin-top: 24px;
+        padding-top: 24px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="page-shell">
+    <nav
+      class="language-switcher"
+      id="language-switcher"
+      aria-label="언어 선택"
+      data-i18n-aria-label="page.language_label"
+    >
+      <button
+        class="language-button"
+        type="button"
+        data-language="ko"
+        aria-pressed="true"
+      >
+        한국어
+      </button>
+      <button
+        class="language-button"
+        type="button"
+        data-language="en"
+        aria-pressed="false"
+      >
+        English
+      </button>
+    </nav>
+
+    <header class="page-header" id="page-header">
+      <span class="eyebrow">Creator Makers</span>
+      <h1 data-i18n="page.heading">캐릭터챗 프롬프트 에디터</h1>
+      <p class="header-description" data-i18n-html="page.description">
+        내 캐릭터챗이 의도대로 흘러가지 않나요? <br />
+        어떤 부분을 개선하고 싶은지 알려주시면, 프롬프트를 고쳐드릴게요!
+      </p>
+      <div class="example-load-actions">
+        <button class="example-load-button" id="load-example-button" type="button">
+          예시 입력 불러오기
+        </button>
+        <button
+          class="example-load-button"
+          id="load-example-button-en"
+          type="button"
+        >
+          Load example input
+        </button>
+      </div>
+    </header>
+
+    <form class="form-card" id="feedback-form">
+      <section class="form-section" aria-labelledby="improvement-title">
+        <div class="section-heading">
+          <span class="section-number" aria-hidden="true">01</span>
+          <h2 id="improvement-title" data-i18n="form.improvement_title">
+            어떤 점을 개선하고 싶나요?
+          </h2>
+        </div>
+        <p
+          class="section-description"
+          id="improvement-description"
+          data-i18n="form.improvement_description"
+        >
+          내레이션 길이, 캐릭터 말투, 관계 전개, 스토리 속도 등의 문제를 입력할 수 있어요.
+        </p>
+        <div class="textarea-wrap">
+          <textarea
+            id="improvement"
+            name="improvement"
+            aria-describedby="improvement-description improvement-count"
+            data-i18n-placeholder="form.improvement_placeholder"
+            placeholder="예시) 내레이션이 너무 길어요, 남주가 몇 번 마주치자마자 고백해요"
+            required
+          ></textarea>
+          <span class="character-count" id="improvement-count">0자</span>
+        </div>
+      </section>
+
+      <section class="form-section" aria-labelledby="prompt-title">
+        <div class="section-heading">
+          <span class="section-number" aria-hidden="true">02</span>
+          <h2 id="prompt-title" data-i18n="form.prompt_title">프롬프트</h2>
+        </div>
+        <p
+          class="section-description"
+          id="prompt-description"
+          data-i18n-html="form.prompt_description"
+        >
+          채팅을 만들 때 사용한 <strong>모든 프롬프트</strong>를 복사해서 붙여 넣어주세요.
+        </p>
+        <div class="textarea-wrap">
+          <textarea
+            id="prompt"
+            name="og_prompt"
+            aria-describedby="prompt-description prompt-count"
+            data-i18n-placeholder="form.prompt_placeholder"
+            placeholder="예시) 상황/관계/세계관 : 다르간 제국은 황실 중심의 엄격한 신분제가…"
+            required
+          ></textarea>
+          <span class="character-count" id="prompt-count">0자</span>
+        </div>
+      </section>
+
+      <section class="form-section" aria-labelledby="intro-title">
+        <div class="section-heading">
+          <span class="section-number" aria-hidden="true">03</span>
+          <h2 id="intro-title" data-i18n="form.intro_title">인트로 대화</h2>
+        </div>
+        <p
+          class="section-description"
+          id="intro-description"
+          data-i18n-html="form.intro_description"
+        >
+          설정한 <strong>첫 인트로 대화</strong>를 복사해서 붙여 넣어주세요.
+        </p>
+
+        <aside
+          class="notice"
+          aria-label="작성 시 주의 사항"
+          data-i18n-aria-label="form.notice_label"
+        >
+          <span class="notice-icon" aria-hidden="true">💡</span>
+          <div data-i18n-html="form.intro_notice">
+            <strong>작성 시 주의 사항</strong>
+            인물의 말에는 꼭 <b>등장인물 이름 :</b>이 붙어있어야 해요.
+          </div>
+        </aside>
+
+        <div class="textarea-wrap">
+          <textarea
+            id="intro"
+            name="og_intro"
+            aria-describedby="intro-description intro-count"
+            data-i18n-placeholder="form.intro_placeholder"
+            placeholder="예시)&#10;기말고사가 끝나고 한산해진 캠퍼스. 지희는 2학기 등록금과 생활비를 벌기 위해 단기 알바 자리를 알아보며 공학관 벤치에 앉아 있다.&#10;&#10;공도혁 : 최지희 학생. 뭐합니까? &#10;최지희 : 아, 교수님! 안녕하세요"
+            required
+          ></textarea>
+          <span class="character-count" id="intro-count">0자</span>
+        </div>
+      </section>
+
+      <section class="form-section" aria-labelledby="history-title">
+        <div class="section-heading">
+          <span class="section-number" aria-hidden="true">04</span>
+          <h2 id="history-title" data-i18n="form.history_title">채팅 대화 기록</h2>
+        </div>
+        <p
+          class="section-description"
+          id="history-description"
+          data-i18n-html="form.history_description"
+        >
+          <strong>문제가 발생한</strong> 채팅 대화를 모두 복사해서 붙여 넣어주세요.
+          프롬프트가 실제 대화에서 어떻게 동작하고 있는지 확인할게요!
+        </p>
+
+        <aside
+          class="notice"
+          aria-label="작성 시 주의 사항"
+          data-i18n-aria-label="form.notice_label"
+        >
+          <span class="notice-icon" aria-hidden="true">💡</span>
+          <div data-i18n-html="form.history_notice">
+            <strong>작성 시 주의 사항</strong>
+            <ul>
+              <li>인물의 말에는 꼭 <b>등장인물 이름 :</b>이 붙어있어야 해요.</li>
+              <li>여러 대화를 넣고 싶다면 대화 사이에 <b>=====</b>를 넣어주세요.</li>
+            </ul>
+          </div>
+        </aside>
+
+        <div class="textarea-wrap">
+          <textarea
+            id="chat-history"
+            name="og_chatHistory"
+            aria-describedby="history-description history-count"
+            data-i18n-placeholder="form.history_placeholder"
+            placeholder="예시)&#10;지아가 집으로 들어온다. 지친 표정이 역력하다.&#10;이지아 :&#10;오늘 학교에서 정말 힘들었어.&#10;=====&#10;이지아 :&#10;오늘 다윗이 집까지 데려다줬어.&#10;강독현 :&#10;그래?"
+            required
+          ></textarea>
+          <span class="character-count" id="history-count">0자</span>
+        </div>
+      </section>
+
+      <footer class="form-footer">
+        <div class="footer-message">
+          <p class="footer-copy" data-i18n="form.api_notice">
+            입력한 내용은 분석을 위해 OpenAI API로 전송됩니다.
+          </p>
+          <p class="form-error" id="form-error" role="alert" hidden></p>
+        </div>
+        <div class="form-actions">
+          <button
+            class="clear-button"
+            type="button"
+            id="clear-button"
+            data-i18n="action.clear"
+          >
+            전체 내용 지우기
+          </button>
+          <button
+            class="submit-button"
+            type="submit"
+            id="submit-button"
+            aria-busy="false"
+          >
+            <span class="spinner" aria-hidden="true"></span>
+            <span id="submit-label" data-i18n="action.improve">프롬프트 개선하기</span>
+          </button>
+        </div>
+      </footer>
+    </form>
+
+    <section
+      class="loading-screen"
+      id="loading-screen"
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+      tabindex="-1"
+      hidden
+    >
+      <div class="loading-card" id="loading-card">
+        <div class="loading-visual" aria-hidden="true">
+          <img
+            class="loading-state-image"
+            id="loading-state-image"
+            src="/static/images/loading/prompt-working.gif"
+            alt=""
+          />
+        </div>
+
+        <span class="loading-kicker">CHARACTER PROMPT EDITOR</span>
+        <h2
+          class="loading-title"
+          id="loading-title"
+          data-i18n="loading.improving_title"
+        >
+          프롬프트 개선하는 중
+        </h2>
+        <p class="loading-description">
+          <span
+            id="loading-description-text"
+            data-i18n="loading.improving_description"
+          >입력한 대화와 프롬프트를 꼼꼼히 살펴보고 있어요</span><span
+            class="loading-dots"
+            aria-hidden="true"
+          ></span>
+        </p>
+        <div class="progress-track" aria-hidden="true"></div>
+
+        <form class="required-prompts-field" id="compile-form">
+          <label
+            class="required-prompts-label"
+            for="required-prompts"
+            data-i18n="compile.required_label"
+          >
+            필요한 프롬프트 항목을 입력해주세요
+          </label>
+          <p
+            class="required-prompts-help"
+            id="required-prompts-help"
+            data-i18n="compile.required_help"
+          >
+            글자 수 제한이 있다면 함께 적어주세요!
+          </p>
+          <div class="required-prompts-wrap">
+            <textarea
+              id="required-prompts"
+              name="required_prompts"
+              aria-describedby="required-prompts-help required-prompts-count compile-status"
+              data-i18n-placeholder="compile.required_placeholder"
+              placeholder="예시)&#10;- 상황/관계/세계관 (10,000자)&#10;- 인물 프롬프트 (인물당 5,000자)&#10;  - 이름&#10;  - 기본&#10;- 도입부"
+              maxlength="30000"
+              required
+            ></textarea>
+            <span class="character-count" id="required-prompts-count">0자</span>
+          </div>
+          <div class="compile-actions">
+            <button
+              class="compile-button"
+              type="submit"
+              id="compile-button"
+              aria-busy="false"
+              disabled
+            >
+              <span class="spinner" aria-hidden="true"></span>
+              <span
+                id="compile-button-label"
+                data-i18n="compile.preparing"
+              >프롬프트 준비 중...</span>
+            </button>
+          </div>
+          <p
+            class="compile-status"
+            id="compile-status"
+            data-i18n="compile.waiting"
+          >
+            프롬프트 개선이 끝나면 버튼이 활성화돼요.
+          </p>
+          <p class="compile-error" id="compile-error" role="alert" hidden></p>
+        </form>
+      </div>
+    </section>
+
+    <section
+      class="result-card"
+      id="result-panel"
+      aria-labelledby="result-title"
+      aria-live="polite"
+      hidden
+    >
+      <header class="result-page-header">
+        <span class="eyebrow">COMPILE COMPLETE</span>
+        <h2
+          class="result-page-title"
+          id="result-title"
+          data-i18n="result.title"
+        >개선된 프롬프트를 확인하세요!</h2>
+        <p class="result-page-description" data-i18n="result.description">
+          요청한 항목과 글자 수에 맞게 정리된 최종 결과예요.
+        </p>
+      </header>
+
+      <section class="result-output-section" aria-labelledby="final-prompt-title">
+        <div class="result-output-heading">
+          <h3
+            class="result-output-title"
+            id="final-prompt-title"
+            data-i18n="result.final_prompt"
+          >최종 개선된 프롬프트</h3>
+          <button
+            class="copy-button"
+            type="button"
+            data-copy-target="final-prompt-output"
+            aria-label="최종 개선된 프롬프트 복사하기"
+            data-i18n-aria-label="result.copy_final_prompt"
+          >
+            <span aria-hidden="true">🗒️</span>
+            <span class="copy-button-label" data-i18n="action.copy">복사</span>
+          </button>
+        </div>
+        <div class="output-preview" id="final-prompt-preview">
+          <pre class="output-text" id="final-prompt-output"></pre>
+        </div>
+        <button
+          class="expand-button"
+          type="button"
+          data-expand-target="final-prompt-preview"
+          aria-expanded="false"
+          data-i18n="action.expand"
+          hidden
+        >
+          전체 보기
+        </button>
+      </section>
+
+      <section class="result-output-section" aria-labelledby="final-intro-title">
+        <div class="result-output-heading">
+          <h3
+            class="result-output-title"
+            id="final-intro-title"
+            data-i18n="result.final_intro"
+          >
+            최종 개선된 인트로 대화
+          </h3>
+          <button
+            class="copy-button"
+            type="button"
+            data-copy-target="final-intro-output"
+            aria-label="최종 개선된 인트로 대화 복사하기"
+            data-i18n-aria-label="result.copy_final_intro"
+          >
+            <span aria-hidden="true">🗒️</span>
+            <span class="copy-button-label" data-i18n="action.copy">복사</span>
+          </button>
+        </div>
+        <div class="output-preview" id="final-intro-preview">
+          <pre class="output-text" id="final-intro-output"></pre>
+        </div>
+        <button
+          class="expand-button"
+          type="button"
+          data-expand-target="final-intro-preview"
+          aria-expanded="false"
+          data-i18n="action.expand"
+          hidden
+        >
+          전체 보기
+        </button>
+      </section>
+
+      <section class="test-section" aria-labelledby="test-section-title">
+        <header class="test-heading">
+          <h3
+            class="test-title"
+            id="test-section-title"
+            data-i18n="test.title"
+          >
+            개선된 프롬프트, 미리 테스트 해보세요✨
+          </h3>
+          <p class="test-description" data-i18n-html="test.description">
+            어떻게 채팅이 이루어질지 미리 확인해드릴게요.<br />
+            원래 프롬프트와 개선된 프롬프트의 대화를 비교해 어떻게 개선되었는지
+            바로 확인할 수 있어요.
+          </p>
+        </header>
+
+        <form id="test-data-form">
+          <div class="test-field">
+            <label
+              class="test-label"
+              for="test-chat-context"
+              data-i18n="test.context_label"
+            >테스트 대화</label>
+            <p
+              class="test-help"
+              id="test-chat-context-help"
+              data-i18n="test.context_help"
+            >
+              테스트하고 싶은 상황이 있다면 대화 형태로 넣어주세요. 입력하지 않으면
+              인트로 대화에 이어서 진행돼요.
+            </p>
+            <div class="test-textarea-wrap">
+              <textarea
+                id="test-chat-context"
+                name="test_chat_context"
+                aria-describedby="test-chat-context-help test-chat-context-count"
+                data-i18n-placeholder="test.context_placeholder"
+                placeholder="예시)&#10;지아가 집으로 들어온다. 지친 표정이 역력하다.&#10;&#10;강독현 :&#10;야, 왜 이제 들어오냐?"
+              ></textarea>
+              <span class="character-count" id="test-chat-context-count">0자</span>
+            </div>
+          </div>
+
+          <div class="test-field">
+            <label
+              class="test-label"
+              for="test-user-input"
+              data-i18n="test.user_input_label"
+            >테스트 사용자 입력</label>
+            <p
+              class="test-help"
+              id="test-user-input-help"
+              data-i18n="test.user_input_help"
+            >
+              대화에서 나의 차례에 어떻게 대답할지 알려주세요. 테스트 대화가 없다면
+              인트로 대화에 대한 답변을 입력하면 돼요.
+            </p>
+            <div class="test-textarea-wrap">
+              <textarea
+                id="test-user-input"
+                name="test_user_input"
+                aria-describedby="test-user-input-help test-user-input-count"
+                data-i18n-placeholder="test.user_input_placeholder"
+                placeholder="예시)&#10;이지아 : 버스를 놓쳐서 걸었어."
+                required
+              ></textarea>
+              <span class="character-count" id="test-user-input-count">0자</span>
+            </div>
+          </div>
+
+          <p class="test-data-note" data-i18n-html="test.data_note">
+            <span aria-hidden="true">💡</span>
+            입력한 내용은 다음 테스트 단계에서 사용됩니다.
+          </p>
+
+          <div class="test-actions">
+            <p class="test-error" id="test-error" role="alert" hidden></p>
+            <button
+              class="test-submit-button"
+              id="test-submit-button"
+              type="submit"
+              aria-busy="false"
+            >
+              <span class="spinner" aria-hidden="true"></span>
+              <span id="test-submit-label" data-i18n="action.test">테스트 하기</span>
+            </button>
+          </div>
+        </form>
+      </section>
+    </section>
+
+    <section
+      class="evaluation-panel"
+      id="evaluation-panel"
+      aria-labelledby="evaluation-title"
+      hidden
+    >
+      <header class="evaluation-header">
+        <h2
+          class="evaluation-title"
+          id="evaluation-title"
+          data-i18n="evaluation.title"
+        >이렇게 개선될 거에요</h2>
+      </header>
+
+      <div class="comparison-grid">
+        <section class="comparison-column" aria-labelledby="before-title">
+          <h3 class="comparison-column-title" id="before-title">📥 Before</h3>
+          <p
+            class="comparison-column-description"
+            data-i18n="evaluation.before_description"
+          >
+            원래 프롬프트로 시뮬레이션해 본 대화에요
+          </p>
+
+          <article class="dialogue-card">
+            <span class="dialogue-label" data-i18n="evaluation.original_1">원본 테스트 대화 1</span>
+            <div class="output-preview dialogue-preview" id="original-test-preview-1">
+              <pre class="output-text" id="original-test-output-1"></pre>
+            </div>
+            <button class="expand-button" type="button" data-expand-target="original-test-preview-1" aria-expanded="false" hidden>전체 보기</button>
+          </article>
+
+          <article class="dialogue-card">
+            <span class="dialogue-label" data-i18n="evaluation.original_2">원본 테스트 대화 2</span>
+            <div class="output-preview dialogue-preview" id="original-test-preview-2">
+              <pre class="output-text" id="original-test-output-2"></pre>
+            </div>
+            <button class="expand-button" type="button" data-expand-target="original-test-preview-2" aria-expanded="false" hidden>전체 보기</button>
+          </article>
+
+          <article class="dialogue-card">
+            <span class="dialogue-label" data-i18n="evaluation.original_3">원본 테스트 대화 3</span>
+            <div class="output-preview dialogue-preview" id="original-test-preview-3">
+              <pre class="output-text" id="original-test-output-3"></pre>
+            </div>
+            <button class="expand-button" type="button" data-expand-target="original-test-preview-3" aria-expanded="false" hidden>전체 보기</button>
+          </article>
+        </section>
+
+        <section class="comparison-column" aria-labelledby="after-title">
+          <h3 class="comparison-column-title" id="after-title">📤 After</h3>
+          <p
+            class="comparison-column-description"
+            data-i18n="evaluation.after_description"
+          >
+            개선된 프롬프트로 시뮬레이션해 본 대화에요
+          </p>
+
+          <article class="dialogue-card">
+            <span class="dialogue-label" data-i18n="evaluation.improved_1">개선 테스트 대화 1</span>
+            <div class="output-preview dialogue-preview" id="improved-test-preview-1">
+              <pre class="output-text" id="improved-test-output-1"></pre>
+            </div>
+            <button class="expand-button" type="button" data-expand-target="improved-test-preview-1" aria-expanded="false" hidden>전체 보기</button>
+          </article>
+
+          <article class="dialogue-card">
+            <span class="dialogue-label" data-i18n="evaluation.improved_2">개선 테스트 대화 2</span>
+            <div class="output-preview dialogue-preview" id="improved-test-preview-2">
+              <pre class="output-text" id="improved-test-output-2"></pre>
+            </div>
+            <button class="expand-button" type="button" data-expand-target="improved-test-preview-2" aria-expanded="false" hidden>전체 보기</button>
+          </article>
+
+          <article class="dialogue-card">
+            <span class="dialogue-label" data-i18n="evaluation.improved_3">개선 테스트 대화 3</span>
+            <div class="output-preview dialogue-preview" id="improved-test-preview-3">
+              <pre class="output-text" id="improved-test-output-3"></pre>
+            </div>
+            <button class="expand-button" type="button" data-expand-target="improved-test-preview-3" aria-expanded="false" hidden>전체 보기</button>
+          </article>
+        </section>
+      </div>
+
+      <section class="report-section" aria-labelledby="report-title">
+        <h3
+          class="report-title"
+          id="report-title"
+          data-i18n="evaluation.report_title"
+        >🧾 결과 리포트</h3>
+
+        <div class="report-table-scroll">
+          <table class="report-table">
+            <thead>
+              <tr>
+                <th data-i18n="evaluation.metric">평가 지표</th>
+                <th data-i18n="evaluation.criterion">판정 기준</th>
+                <th data-i18n="evaluation.original_1">원본 테스트 대화 1</th>
+                <th data-i18n="evaluation.original_2">원본 테스트 대화 2</th>
+                <th data-i18n="evaluation.original_3">원본 테스트 대화 3</th>
+                <th data-i18n="evaluation.original_summary">원본 종합</th>
+                <th data-i18n="evaluation.improved_1">개선 테스트 대화 1</th>
+                <th data-i18n="evaluation.improved_2">개선 테스트 대화 2</th>
+                <th data-i18n="evaluation.improved_3">개선 테스트 대화 3</th>
+                <th data-i18n="evaluation.improved_summary">개선본 종합</th>
+                <th data-i18n="evaluation.change">변화 및 비교</th>
+              </tr>
+            </thead>
+            <tbody id="report-metrics-body"></tbody>
+          </table>
+        </div>
+
+        <section class="report-summary" aria-labelledby="comparison-summary-title">
+          <h4
+            class="report-subtitle"
+            id="comparison-summary-title"
+            data-i18n="evaluation.comparison_summary"
+          >비교 요약</h4>
+          <ul class="report-list" id="comparison-summary-list"></ul>
+        </section>
+
+        <div class="verdict-grid">
+          <section class="verdict-card" aria-labelledby="success-title">
+            <h4
+              class="verdict-card-title"
+              id="success-title"
+              data-i18n="evaluation.success"
+            >개선 성공 여부</h4>
+            <span class="verdict-label" id="success-verdict"></span>
+            <p class="verdict-rationale" id="success-rationale"></p>
+          </section>
+
+          <section class="verdict-card" aria-labelledby="residual-title">
+            <h4
+              class="verdict-card-title"
+              id="residual-title"
+              data-i18n="evaluation.residual"
+            >잔존 문제</h4>
+            <ul class="report-list" id="residual-problems-list"></ul>
+          </section>
+
+          <section class="verdict-card" aria-labelledby="revision-title">
+            <h4
+              class="verdict-card-title"
+              id="revision-title"
+              data-i18n="evaluation.revision"
+            >재수정 필요 여부</h4>
+            <span class="verdict-label" id="revision-verdict"></span>
+            <p class="verdict-rationale" id="revision-rationale"></p>
+          </section>
+        </div>
+      </section>
+    </section>
+
+    <nav
+      class="evaluation-navigation"
+      id="evaluation-navigation"
+      aria-label="결과 화면 이동"
+      data-i18n-aria-label="evaluation.navigation_label"
+      hidden
+    >
+      <button
+        class="evaluation-navigation-button evaluation-back-button"
+        id="evaluation-back-button"
+        type="button"
+      >
+        <span data-i18n="action.back">뒤로 가기</span>
+      </button>
+      <button
+        class="evaluation-navigation-button evaluation-home-button"
+        id="evaluation-home-button"
+        type="button"
+      >
+        <span data-i18n="action.home">처음으로 가기</span>
+      </button>
+    </nav>
+  </main>
+
+  <script>
+    const translations = {
+      ko: {
+        "page.title": "채팅 프롬프트 피드백",
+        "page.language_label": "언어 선택",
+        "page.heading": "캐릭터챗 프롬프트 에디터",
+        "page.description":
+          "내 캐릭터챗이 의도대로 흘러가지 않나요? <br />어떤 부분을 개선하고 싶은지 알려주시면, 프롬프트를 고쳐드릴게요!",
+        "form.improvement_title": "어떤 점을 개선하고 싶나요?",
+        "form.improvement_description":
+          "내레이션 길이, 캐릭터 말투, 관계 전개, 스토리 속도 등의 문제를 입력할 수 있어요.",
+        "form.improvement_placeholder":
+          "예시) 내레이션이 너무 길어요, 남주가 몇 번 마주치자마자 고백해요",
+        "form.prompt_title": "프롬프트",
+        "form.prompt_description":
+          "채팅을 만들 때 사용한 <strong>모든 프롬프트</strong>를 복사해서 붙여 넣어주세요.",
+        "form.prompt_placeholder":
+          "예시) 상황/관계/세계관 : 다르간 제국은 황실 중심의 엄격한 신분제가…",
+        "form.intro_title": "인트로 대화",
+        "form.intro_description":
+          "설정한 <strong>첫 인트로 대화</strong>를 복사해서 붙여 넣어주세요.",
+        "form.notice_label": "작성 시 주의 사항",
+        "form.intro_notice":
+          "<strong>작성 시 주의 사항</strong> 인물의 말에는 꼭 <b>등장인물 이름 :</b>이 붙어있어야 해요.",
+        "form.intro_placeholder":
+          "예시)\n기말고사가 끝나고 한산해진 캠퍼스. 지희는 2학기 등록금과 생활비를 벌기 위해 단기 알바 자리를 알아보며 공학관 벤치에 앉아 있다.\n\n공도혁 : 최지희 학생. 뭐합니까?\n최지희 : 아, 교수님! 안녕하세요",
+        "form.history_title": "채팅 대화 기록",
+        "form.history_description":
+          "<strong>문제가 발생한</strong> 채팅 대화를 모두 복사해서 붙여 넣어주세요. 프롬프트가 실제 대화에서 어떻게 동작하고 있는지 확인할게요!",
+        "form.history_notice":
+          "<strong>작성 시 주의 사항</strong><ul><li>인물의 말에는 꼭 <b>등장인물 이름 :</b>이 붙어있어야 해요.</li><li>여러 대화를 넣고 싶다면 대화 사이에 <b>=====</b>를 넣어주세요.</li></ul>",
+        "form.history_placeholder":
+          "예시)\n지아가 집으로 들어온다. 지친 표정이 역력하다.\n이지아 :\n오늘 학교에서 정말 힘들었어.\n=====\n이지아 :\n오늘 다윗이 집까지 데려다줬어.\n강독현 :\n그래?",
+        "form.api_notice": "입력한 내용은 분석을 위해 OpenAI API로 전송됩니다.",
+        "action.clear": "전체 내용 지우기",
+        "action.improve": "프롬프트 개선하기",
+        "action.improving": "진단하고 개선하고 있어요...",
+        "action.copy": "복사",
+        "action.copied": "복사됨",
+        "action.copy_failed": "복사 실패",
+        "action.expand": "전체 보기",
+        "action.collapse": "접기",
+        "action.test": "테스트 하기",
+        "action.testing": "테스트 중...",
+        "action.back": "뒤로 가기",
+        "action.home": "처음으로 가기",
+        "loading.improving_title": "프롬프트 개선하는 중",
+        "loading.improving_description":
+          "입력한 대화와 프롬프트를 꼼꼼히 살펴보고 있어요",
+        "loading.analysis_ready_title": "프롬프트 1차 개선 완료",
+        "loading.analysis_ready_description":
+          "프롬프트 1차 개선이 완료됐어요. 아래 추가 항목을 입력해주세요.",
+        "loading.compiling_title": "최종 프롬프트 만드는 중",
+        "loading.compiling_description":
+          "요청한 항목과 글자 수에 맞게 내용을 컴파일하고 있어요",
+        "loading.compile_failed_title": "최종 프롬프트 만들기 실패",
+        "loading.compile_failed_description":
+          "필요한 프롬프트 목록을 확인한 뒤 다시 시도해 주세요",
+        "loading.generating_tests_title": "테스트 대화 만드는 중",
+        "loading.generating_tests_description":
+          "원본과 개선 프롬프트를 같은 조건으로 테스트하고 있어요",
+        "loading.evaluating_title": "테스트 결과 분석하는 중",
+        "loading.evaluating_description":
+          "원본과 개선 테스트 대화를 같은 기준으로 비교하고 있어요",
+        "compile.required_label": "필요한 프롬프트 항목을 입력해주세요",
+        "compile.required_help": "글자 수 제한이 있다면 함께 적어주세요!",
+        "compile.required_placeholder":
+          "예시)\n- 상황/관계/세계관 (10,000자)\n- 인물 프롬프트 (인물당 5,000자)\n  - 이름\n  - 기본\n- 도입부",
+        "compile.preparing": "프롬프트 준비 중...",
+        "compile.waiting": "프롬프트 개선이 끝나면 버튼이 활성화돼요.",
+        "compile.create": "최종 프롬프트 만들기",
+        "compile.creating": "최종 결과 만드는 중...",
+        "compile.processing": "완료될 때까지 잠시만 기다려주세요.",
+        "compile.retry": "다시 최종 프롬프트 만들기",
+        "compile.rules":
+          "목록의 항목명, 순서와 글자 수 제한을 그대로 반영할게요.",
+        "result.title": "개선된 프롬프트를 확인하세요!",
+        "result.description": "요청한 항목과 글자 수에 맞게 정리된 최종 결과예요.",
+        "result.final_prompt": "최종 개선된 프롬프트",
+        "result.final_intro": "최종 개선된 인트로 대화",
+        "result.copy_final_prompt": "최종 개선된 프롬프트 복사하기",
+        "result.copy_final_intro": "최종 개선된 인트로 대화 복사하기",
+        "test.title": "개선된 프롬프트, 미리 테스트 해보세요✨",
+        "test.description":
+          "어떻게 채팅이 이루어질지 미리 확인해드릴게요.<br />원래 프롬프트와 개선된 프롬프트의 대화를 비교해 어떻게 개선되었는지 바로 확인할 수 있어요.",
+        "test.context_label": "테스트 대화",
+        "test.context_help":
+          "테스트하고 싶은 상황이 있다면 대화 형태로 넣어주세요. 입력하지 않으면 인트로 대화에 이어서 진행돼요.",
+        "test.context_placeholder":
+          "예시)\n지아가 집으로 들어온다. 지친 표정이 역력하다.\n\n강독현 :\n야, 왜 이제 들어오냐?",
+        "test.user_input_label": "테스트 사용자 입력",
+        "test.user_input_help":
+          "대화에서 나의 차례에 어떻게 대답할지 알려주세요. 테스트 대화가 없다면 인트로 대화에 대한 답변을 입력하면 돼요.",
+        "test.user_input_placeholder": "예시)\n이지아 : 버스를 놓쳐서 걸었어.",
+        "test.data_note":
+          '<span aria-hidden="true">💡</span> 입력한 내용은 다음 테스트 단계에서 사용됩니다.',
+        "evaluation.title": "이렇게 개선될 거에요",
+        "evaluation.before_description":
+          "원래 프롬프트로 시뮬레이션해 본 대화에요",
+        "evaluation.after_description":
+          "개선된 프롬프트로 시뮬레이션해 본 대화에요",
+        "evaluation.original_1": "원본 테스트 대화 1",
+        "evaluation.original_2": "원본 테스트 대화 2",
+        "evaluation.original_3": "원본 테스트 대화 3",
+        "evaluation.improved_1": "개선 테스트 대화 1",
+        "evaluation.improved_2": "개선 테스트 대화 2",
+        "evaluation.improved_3": "개선 테스트 대화 3",
+        "evaluation.report_title": "🧾 결과 리포트",
+        "evaluation.metric": "평가 지표",
+        "evaluation.criterion": "판정 기준",
+        "evaluation.original_summary": "원본 종합",
+        "evaluation.improved_summary": "개선본 종합",
+        "evaluation.change": "변화 및 비교",
+        "evaluation.comparison_summary": "비교 요약",
+        "evaluation.success": "개선 성공 여부",
+        "evaluation.residual": "잔존 문제",
+        "evaluation.revision": "재수정 필요 여부",
+        "evaluation.navigation_label": "결과 화면 이동",
+        "counter.unit": "자",
+        "confirm.clear": "입력한 내용을 모두 지울까요?",
+        "example.loading_ko": "예시 입력 불러오는 중...",
+        "example.loading_en": "Loading example input...",
+        "error.INVALID_JSON": "JSON 형식으로 요청해 주세요.",
+        "error.INVALID_REQUEST": "요청 데이터 형식이 올바르지 않아요.",
+        "error.INVALID_OUTPUT_LANGUAGE": "지원하지 않는 언어예요.",
+        "error.REQUIRED_FIELD": "필수 입력 내용을 확인해 주세요.",
+        "error.FIELD_TOO_LONG": "입력 내용이 너무 길어요.",
+        "error.TOTAL_TOO_LONG": "전체 입력 내용이 너무 길어요. 내용을 줄인 뒤 다시 시도해 주세요.",
+        "error.INVALID_DIAGNOSIS": "문제 진단 결과를 확인할 수 없어요.",
+        "error.INVALID_TESTS": "테스트 대화 입력을 확인해 주세요.",
+        "error.API_KEY_MISSING": "서버의 OpenAI API 키가 설정되지 않았어요.",
+        "error.EMPTY_MODEL_RESPONSE": "GPT 응답이 비어 있어요. 잠시 후 다시 시도해 주세요.",
+        "error.INVALID_MODEL_FORMAT": "GPT 결과 형식을 읽을 수 없어요. 다시 시도해 주세요.",
+        "error.DAILY_LIMIT_EXCEEDED": "하루 이용 횟수를 초과하였습니다.",
+        "error.OPENAI_AUTH_FAILED": "OpenAI API 키를 인증할 수 없어요.",
+        "error.OPENAI_RATE_LIMIT": "현재 요청이 많거나 API 사용 한도에 도달했어요. 잠시 후 다시 시도해 주세요.",
+        "error.OPENAI_CONNECTION_FAILED": "OpenAI 서버에 연결할 수 없어요. 잠시 후 다시 시도해 주세요.",
+        "error.OPENAI_API_FAILED": "OpenAI에서 요청을 처리하지 못했어요. 잠시 후 다시 시도해 주세요.",
+        "error.OPENAI_REQUEST_FAILED": "GPT 처리 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.",
+        "error.INTERNAL_ERROR": "서버에서 예상하지 못한 오류가 발생했어요.",
+        "error.NETWORK": "서버에 연결할 수 없어요. 백엔드가 실행 중인지 확인해 주세요.",
+        "error.RESPONSE_READ": "서버 응답을 읽을 수 없어요. 잠시 후 다시 시도해 주세요.",
+        "error.ANALYZE_FAILED": "분석 요청을 처리하지 못했어요.",
+        "error.ANALYZE_EMPTY": "프롬프트 개선 결과가 비어 있어요. 다시 시도해 주세요.",
+        "error.ANALYZE_PENDING": "프롬프트 개선이 아직 끝나지 않았어요. 잠시만 기다려주세요.",
+        "error.REQUIRED_PROMPTS": "필요한 프롬프트 항목을 입력해 주세요.",
+        "error.COMPILE_FAILED": "최종 프롬프트 요청을 처리하지 못했어요.",
+        "error.COMPILE_EMPTY": "최종 프롬프트 결과가 비어 있어요. 다시 시도해 주세요.",
+        "error.TEST_NOT_READY": "최종 프롬프트가 준비되지 않았어요. 처음부터 다시 진행해 주세요.",
+        "error.TEST_INPUT_REQUIRED": "테스트 사용자 입력을 작성해 주세요.",
+        "error.DIAGNOSIS_MISSING": "문제 진단 결과를 확인할 수 없어요. 처음부터 다시 진행해 주세요.",
+        "error.TEST_RESPONSE_READ": "테스트 대화 생성 응답을 읽을 수 없어요. 잠시 후 다시 시도해 주세요.",
+        "error.TEST_GENERATION_FAILED": "테스트 대화 생성 요청을 처리하지 못했어요.",
+        "error.TESTS_MISSING": "생성된 테스트 대화 6개를 확인할 수 없어요.",
+        "error.EVALUATION_RESPONSE_READ": "A/B 테스트 평가 응답을 읽을 수 없어요. 잠시 후 다시 시도해 주세요.",
+        "error.EVALUATION_FAILED": "A/B 테스트 평가 요청을 처리하지 못했어요.",
+        "error.EVALUATION_MISSING": "A/B 테스트 평가 결과를 확인할 수 없어요.",
+        "error.EXAMPLE_PROMPT_FAILED": "예시 프롬프트를 불러오지 못했어요.",
+      },
+      en: {
+        "page.title": "Character Chat Prompt Feedback",
+        "page.language_label": "Select language",
+        "page.heading": "Character Chat Prompt Editor",
+        "page.description":
+          "Is your character chat not going the way you intended? <br />Tell us what you want to improve, and we’ll refine the prompt for you!",
+        "form.improvement_title": "What would you like to improve?",
+        "form.improvement_description":
+          "Describe issues such as narration length, character voice, relationship development, or story pacing.",
+        "form.improvement_placeholder":
+          "Example: The narration is too long, or the male lead confesses after only a few encounters.",
+        "form.prompt_title": "Prompt",
+        "form.prompt_description":
+          "Copy and paste <strong>all prompts</strong> used to create the chat.",
+        "form.prompt_placeholder":
+          "Example: Setting / relationships / worldbuilding: The Dargan Empire has a strict class system centered on the imperial family…",
+        "form.intro_title": "Intro dialogue",
+        "form.intro_description":
+          "Copy and paste the <strong>original intro dialogue</strong> you configured.",
+        "form.notice_label": "Writing guidelines",
+        "form.intro_notice":
+          "<strong>Writing guidelines</strong> Every spoken line must include the <b>character name:</b>",
+        "form.intro_placeholder":
+          "Example:\nThe campus is quiet after final exams. Jihee sits on a bench near the engineering building while looking for a short-term job.\n\nGong Dohyeok: Student Choi Jihee. What are you doing?\nChoi Jihee: Oh, Professor! Hello.",
+        "form.history_title": "Chat history",
+        "form.history_description":
+          "Copy and paste all chat messages where the <strong>problem occurred</strong>. We’ll check how the prompt behaves in the actual conversation.",
+        "form.history_notice":
+          "<strong>Writing guidelines</strong><ul><li>Every spoken line must include the <b>character name:</b></li><li>To include multiple conversations, place <b>=====</b> between them.</li></ul>",
+        "form.history_placeholder":
+          "Example:\nJia comes home looking exhausted.\nLee Jia:\nSchool was really hard today.\n=====\nLee Jia:\nDawit walked me home today.\nKang Dokhyeon:\nReally?",
+        "form.api_notice": "Your input is sent to the OpenAI API for analysis.",
+        "action.clear": "Clear all",
+        "action.improve": "Improve prompt",
+        "action.improving": "Diagnosing and improving...",
+        "action.copy": "Copy",
+        "action.copied": "Copied",
+        "action.copy_failed": "Copy failed",
+        "action.expand": "Show all",
+        "action.collapse": "Collapse",
+        "action.test": "Run test",
+        "action.testing": "Testing...",
+        "action.back": "Back",
+        "action.home": "Start over",
+        "loading.improving_title": "Improving your prompt",
+        "loading.improving_description":
+          "Reviewing your dialogue and prompt carefully",
+        "loading.analysis_ready_title": "First prompt revision complete",
+        "loading.analysis_ready_description":
+          "The first revision is complete. Enter the additional sections below.",
+        "loading.compiling_title": "Creating the final prompt",
+        "loading.compiling_description":
+          "Compiling the content to match your requested sections and character limits",
+        "loading.compile_failed_title": "Failed to create the final prompt",
+        "loading.compile_failed_description":
+          "Check the required prompt sections and try again",
+        "loading.generating_tests_title": "Generating test dialogues",
+        "loading.generating_tests_description":
+          "Testing the original and improved prompts under the same conditions",
+        "loading.evaluating_title": "Analyzing test results",
+        "loading.evaluating_description":
+          "Comparing the original and improved test dialogues using the same criteria",
+        "compile.required_label": "Enter the prompt sections you need",
+        "compile.required_help": "Include character limits if applicable.",
+        "compile.required_placeholder":
+          "Example:\n- Setting / relationships / worldbuilding (10,000 characters)\n- Character prompts (5,000 characters each)\n  - Name\n  - Basics\n- Introduction",
+        "compile.preparing": "Preparing prompt...",
+        "compile.waiting": "This button will activate when the first revision is complete.",
+        "compile.create": "Create final prompt",
+        "compile.creating": "Creating final result...",
+        "compile.processing": "Please wait until processing is complete.",
+        "compile.retry": "Retry final prompt",
+        "compile.rules":
+          "The section names, order, and character limits will be applied exactly as entered.",
+        "result.title": "Review your improved prompt!",
+        "result.description":
+          "Here is the final result organized around your requested sections and character limits.",
+        "result.final_prompt": "Final improved prompt",
+        "result.final_intro": "Final improved intro dialogue",
+        "result.copy_final_prompt": "Copy the final improved prompt",
+        "result.copy_final_intro": "Copy the final improved intro dialogue",
+        "test.title": "Preview the improved prompt ✨",
+        "test.description":
+          "See how the chat may unfold.<br />Compare dialogues from the original and improved prompts to review the changes.",
+        "test.context_label": "Conversation before the test",
+        "test.context_help":
+          "Enter a dialogue context if you want to test a specific situation. Leave it blank to continue from the intro dialogue.",
+        "test.context_placeholder":
+          "Example:\nJia comes home looking exhausted.\n\nKang Dokhyeon:\nWhy are you only getting home now?",
+        "test.user_input_label": "Test user input",
+        "test.user_input_help":
+          "Enter what you would say on your turn. If there is no preceding test dialogue, reply to the intro dialogue.",
+        "test.user_input_placeholder": "Example:\nLee Jia: I missed the bus, so I walked.",
+        "test.data_note":
+          '<span aria-hidden="true">💡</span> Your input will be used in the next testing step.',
+        "evaluation.title": "Here’s how it improves",
+        "evaluation.before_description":
+          "Dialogues simulated with the original prompt",
+        "evaluation.after_description":
+          "Dialogues simulated with the improved prompt",
+        "evaluation.original_1": "Original test dialogue 1",
+        "evaluation.original_2": "Original test dialogue 2",
+        "evaluation.original_3": "Original test dialogue 3",
+        "evaluation.improved_1": "Improved test dialogue 1",
+        "evaluation.improved_2": "Improved test dialogue 2",
+        "evaluation.improved_3": "Improved test dialogue 3",
+        "evaluation.report_title": "🧾 Results report",
+        "evaluation.metric": "Evaluation metric",
+        "evaluation.criterion": "Pass criterion",
+        "evaluation.original_summary": "Original summary",
+        "evaluation.improved_summary": "Improved summary",
+        "evaluation.change": "Change and comparison",
+        "evaluation.comparison_summary": "Comparison summary",
+        "evaluation.success": "Improvement outcome",
+        "evaluation.residual": "Remaining issues",
+        "evaluation.revision": "Further revision",
+        "evaluation.navigation_label": "Result navigation",
+        "counter.unit": " characters",
+        "confirm.clear": "Clear all entered content?",
+        "example.loading_ko": "예시 입력 불러오는 중...",
+        "example.loading_en": "Loading example input...",
+        "error.INVALID_JSON": "Please send the request as JSON.",
+        "error.INVALID_REQUEST": "The request data is invalid.",
+        "error.INVALID_OUTPUT_LANGUAGE": "This language is not supported.",
+        "error.REQUIRED_FIELD": "Please check all required fields.",
+        "error.FIELD_TOO_LONG": "The input is too long.",
+        "error.TOTAL_TOO_LONG": "The total input is too long. Shorten it and try again.",
+        "error.INVALID_DIAGNOSIS": "The diagnosis data is invalid.",
+        "error.INVALID_TESTS": "Please check all test dialogue inputs.",
+        "error.API_KEY_MISSING": "The server’s OpenAI API key is not configured.",
+        "error.EMPTY_MODEL_RESPONSE": "The GPT response was empty. Please try again shortly.",
+        "error.INVALID_MODEL_FORMAT": "The GPT result format could not be read. Please try again.",
+        "error.DAILY_LIMIT_EXCEEDED": "You have exceeded today’s usage limit.",
+        "error.OPENAI_AUTH_FAILED": "The OpenAI API key could not be authenticated.",
+        "error.OPENAI_RATE_LIMIT": "The service is busy or the API limit has been reached. Please try again shortly.",
+        "error.OPENAI_CONNECTION_FAILED": "Could not connect to OpenAI. Please try again shortly.",
+        "error.OPENAI_API_FAILED": "OpenAI could not process the request. Please try again shortly.",
+        "error.OPENAI_REQUEST_FAILED": "An error occurred while GPT was processing the request. Please try again shortly.",
+        "error.INTERNAL_ERROR": "An unexpected server error occurred.",
+        "error.NETWORK": "Could not connect to the server. Check that the backend is running.",
+        "error.RESPONSE_READ": "Could not read the server response. Please try again shortly.",
+        "error.ANALYZE_FAILED": "The analysis request could not be processed.",
+        "error.ANALYZE_EMPTY": "The prompt improvement result is empty. Please try again.",
+        "error.ANALYZE_PENDING": "Prompt improvement is not finished yet. Please wait.",
+        "error.REQUIRED_PROMPTS": "Enter the required prompt sections.",
+        "error.COMPILE_FAILED": "The final prompt request could not be processed.",
+        "error.COMPILE_EMPTY": "The final prompt result is empty. Please try again.",
+        "error.TEST_NOT_READY": "The final prompt is not ready. Please restart the workflow.",
+        "error.TEST_INPUT_REQUIRED": "Enter a test user input.",
+        "error.DIAGNOSIS_MISSING": "The diagnosis result is unavailable. Please restart the workflow.",
+        "error.TEST_RESPONSE_READ": "Could not read the test-generation response. Please try again shortly.",
+        "error.TEST_GENERATION_FAILED": "The test-generation request could not be processed.",
+        "error.TESTS_MISSING": "The six generated test dialogues are unavailable.",
+        "error.EVALUATION_RESPONSE_READ": "Could not read the A/B evaluation response. Please try again shortly.",
+        "error.EVALUATION_FAILED": "The A/B evaluation request could not be processed.",
+        "error.EVALUATION_MISSING": "The A/B evaluation result is unavailable.",
+        "error.EXAMPLE_PROMPT_FAILED": "The example prompt could not be loaded.",
+      },
+    };
+
+    function detectInitialLanguage() {
+      const queryLanguage = new URLSearchParams(window.location.search).get("lang");
+      if (queryLanguage === "ko" || queryLanguage === "en") {
+        return queryLanguage;
+      }
+
+      try {
+        const savedLanguage = window.localStorage.getItem("preferred-language");
+        if (savedLanguage === "ko" || savedLanguage === "en") {
+          return savedLanguage;
+        }
+      } catch {
+        // Local storage can be unavailable in restrictive browser modes.
+      }
+
+      const browserLanguages =
+        Array.isArray(navigator.languages) && navigator.languages.length
+          ? navigator.languages
+          : [navigator.language || "ko"];
+      for (const language of browserLanguages) {
+        const normalized = String(language).toLowerCase();
+        if (normalized.startsWith("ko")) return "ko";
+        if (normalized.startsWith("en")) return "en";
+      }
+      return "ko";
+    }
+
+    let currentLanguage = detectInitialLanguage();
+
+    function t(key) {
+      return (
+        translations[currentLanguage][key] ??
+        translations.ko[key] ??
+        key
+      );
+    }
+
+    function applyTranslations() {
+      document.documentElement.lang = currentLanguage;
+      document.title = t("page.title");
+      document
+        .querySelectorAll("[data-i18n]")
+        .forEach((element) => {
+          element.textContent = t(element.dataset.i18n);
+        });
+      document
+        .querySelectorAll("[data-i18n-html]")
+        .forEach((element) => {
+          element.innerHTML = t(element.dataset.i18nHtml);
+        });
+      document
+        .querySelectorAll("[data-i18n-placeholder]")
+        .forEach((element) => {
+          element.placeholder = t(element.dataset.i18nPlaceholder);
+        });
+      document
+        .querySelectorAll("[data-i18n-aria-label]")
+        .forEach((element) => {
+          element.setAttribute("aria-label", t(element.dataset.i18nAriaLabel));
+        });
+      document
+        .querySelectorAll("[data-language]")
+        .forEach((button) => {
+          button.setAttribute(
+            "aria-pressed",
+            String(button.dataset.language === currentLanguage)
+          );
+        });
+      document
+        .querySelectorAll(".expand-button")
+        .forEach((button) => {
+          button.textContent =
+            button.getAttribute("aria-expanded") === "true"
+              ? t("action.collapse")
+              : t("action.expand");
+        });
+      document
+        .querySelectorAll(".copy-button-label")
+        .forEach((label) => {
+          label.textContent = t("action.copy");
+        });
+    }
+
+    function setLanguage(language, { updateUrl = true } = {}) {
+      if (language !== "ko" && language !== "en") return;
+      currentLanguage = language;
+
+      try {
+        window.localStorage.setItem("preferred-language", language);
+      } catch {
+        // The selected language still applies for the current page.
+      }
+
+      if (updateUrl) {
+        const url = new URL(window.location.href);
+        url.searchParams.set("lang", language);
+        window.history.replaceState({}, "", url);
+      }
+
+      applyTranslations();
+      textareas.forEach(updateTextarea);
+    }
+
+    const pageHeader = document.getElementById("page-header");
+    const form = document.getElementById("feedback-form");
+    const textareas = document.querySelectorAll("textarea");
+    const languageButtons = document.querySelectorAll("[data-language]");
+    const loadExampleButton = document.getElementById("load-example-button");
+    const loadExampleButtonEn = document.getElementById("load-example-button-en");
+    const clearButton = document.getElementById("clear-button");
+    const submitButton = document.getElementById("submit-button");
+    const submitLabel = document.getElementById("submit-label");
+    const formError = document.getElementById("form-error");
+    const loadingScreen = document.getElementById("loading-screen");
+    const loadingCard = document.getElementById("loading-card");
+    const loadingTitle = document.getElementById("loading-title");
+    const loadingDescriptionText = document.getElementById("loading-description-text");
+    const loadingStateImage = document.getElementById("loading-state-image");
+    const compileForm = document.getElementById("compile-form");
+    const requiredPrompts = document.getElementById("required-prompts");
+    const compileButton = document.getElementById("compile-button");
+    const compileButtonLabel = document.getElementById("compile-button-label");
+    const compileStatus = document.getElementById("compile-status");
+    const compileError = document.getElementById("compile-error");
+    const resultPanel = document.getElementById("result-panel");
+    const finalPromptOutput = document.getElementById("final-prompt-output");
+    const finalIntroOutput = document.getElementById("final-intro-output");
+    const outputPreviews = document.querySelectorAll(".output-preview");
+    const copyButtons = document.querySelectorAll(".copy-button");
+    const expandButtons = document.querySelectorAll(".expand-button");
+    const testDataForm = document.getElementById("test-data-form");
+    const testSubmitButton = document.getElementById("test-submit-button");
+    const testSubmitLabel = document.getElementById("test-submit-label");
+    const testError = document.getElementById("test-error");
+    const evaluationPanel = document.getElementById("evaluation-panel");
+    const reportMetricsBody = document.getElementById("report-metrics-body");
+    const comparisonSummaryList = document.getElementById("comparison-summary-list");
+    const successVerdict = document.getElementById("success-verdict");
+    const successRationale = document.getElementById("success-rationale");
+    const residualProblemsList = document.getElementById("residual-problems-list");
+    const revisionVerdict = document.getElementById("revision-verdict");
+    const revisionRationale = document.getElementById("revision-rationale");
+    const evaluationNavigation = document.getElementById("evaluation-navigation");
+    const evaluationBackButton = document.getElementById("evaluation-back-button");
+    const evaluationHomeButton = document.getElementById("evaluation-home-button");
+    let analysisData = null;
+    let initialPayload = null;
+    let compiledData = null;
+    let workflowLanguageLocked = false;
+    let testInputData = {
+      test_chat_context: "",
+      test_user_input: "",
+    };
+    const exampleInput = {
+      improvement: "내레이션이 너무 길어요",
+      og_intro: `결혼식이 끝난 지 일주일. 지아는 이제 독현과 같은 집, 맞은편 방에서 살아야 한다. 부모는 여행으로 집을 비웠고, 넓은 저택에는 두 사람만 남아 있었다.
+
+늦은 밤, 현관문이 조심스럽게 열렸다. 목발을 짚은 지아와 그 옆에서 가방을 대신 든 다윗이 들어왔다. 계단 위에 기대 있던 독현의 시선이 두 사람에게 멈췄다.
+
+강독현 : 남의 집까지 친절하게 데려다주고. 요즘 되게 한가한가 봐?
+
+다윗은 대꾸하지 않고 지아의 가방을 내려놓았다. 독현의 목소리를 들은 순간, 지아의 어깨는 눈에 띄게 굳어 있었다.
+
+박다윗 : 학교에서 넘어졌어. 혼자 보내기 그래서 데려온 거야.
+
+강독현 : 내가 물어봤냐?
+
+독현이 계단을 내려올수록 지아의 손은 목발을 세게 움켜쥐었다. 그 작은 움직임이 독현의 눈에 거슬렸다. 자신은 쳐다보지도 못하면서 다윗의 도움은 얌전히 받았다는 사실도.
+
+다윗이 지아의 앞을 반쯤 가로막았다.
+
+박다윗 : 오늘은 그냥 보내줘.
+
+짧은 침묵 뒤, 독현이 비뚤게 웃었다.
+
+강독현 : 왜. 이제 네가 얘 보호자라도 돼?
+
+두 사람의 시선이 맞붙었다. 지아는 그 사이에서 숨조차 크게 쉬지 못했다. 독현은 이번에는 지아를 똑바로 바라봤다.
+
+강독현 : 네가 말해. 얘가 왜 여기까지 따라온 건데?`,
+      og_chatHistory: `창가 자리, 지아는 책상에 시선을 고정시킨 채 멍하니 앉아 있었다. 어제의 소란스러웠던 현관 앞 공기가 아직도 피부 끝에 남아있는 듯, 지아의 어깨는 미세하게 경직되어 있었다. 다리를 움직일 때마다 느껴지는 둔탁한 통증보다, 자신을 꿰뚫어 보던 독현의 그 싸늘한 눈빛이 더 아프게 가슴을 눌렀다. 지아는 떨리는 손을 감추려 교복 소매 끝을 꼭 쥐었다.
+그때, 뒷문을 열고 들어오는 발소리와 함께 교실 안의 공기가 순식간에 무겁게 가라앉았다. 아이들의 낮은 속삭임이 잦아들고, 몇몇은 슬금슬금 자리를 피했다. 독현이었다. 그는 평소와 다름없이 단정한 교복 차림이었지만, 주변을 압도하는 특유의 서늘한 기운은 여전했다. 독현은 교실 안을 훑던 시선을 이내 지아가 있는 쪽으로 던졌다.
+독현은 주머니에 손을 넣은 채 성큼성큼 지아의 자리 근처로 다가갔다. 그의 그림자가 지아의 책상 위로 길게 드리워졌다. 독현은 지아의 앞에 멈춰 서서, 마치 벌레라도 보는 듯한 싸늘한 표정으로 내려다보았다. 어제 다윗 앞에서 보여주었던 그 묘한 불쾌감은 여전히 가라앉지 않은 듯, 그의 미간이 살짝 일그러졌다.
+
+강독현 : 어제는 아주 신났더라? 남자가 옆에서 달래주니까 기분이 좋았나 봐?
+
+=====
+
+창밖에서 밀려 들어온 오후의 햇살이 교실 안을 부옇게 채우고 있었다. 수업을 알리는 선생님의 단조로운 목소리가 교실 안을 부유했지만, 지아는 그 소리가 마치 먼 곳에서 들려오는 것처럼 아득하게만 느껴졌다. 지아는 억지로 펜을 움직여 노트를 정리하려 애썼지만, 자꾸만 시선이 닿는 앞자리 어느 한 곳에 마음을 빼앗기고 말았다.
+그곳에는 독현이 앉아 있었다. 칠판을 응시하는 그의 옆모습은 차갑고 정적이었다. 창가에서 쏟아지는 빛이 그의 짙은 흑발 위로 부서져 내렸다. 빛을 머금은 머리카락이 반짝일 때마다, 지아는 자신도 모르게 숨을 죽였다. 어제 현관에서의 그 서늘하고 날카로운 모습과는 너무나 대조적인, 평온하기까지 한 뒷모습이었다.
+하지만 그 평온함은 지아에게 결코 허락된 것이 아니었다. 독현의 등 뒤로 보이는 그 찬란한 빛줄기가 오히려 지아에게는 눈부신 벽처럼 느껴졌다. 저 빛 속에 있는 그는 완벽해 보였지만, 동시에 자신과는 결코 섞일 수 없는 존재라는 사실을 끊임없이 상기시켰다. 지아는 괜히 마른침을 삼키며 고개를 더 깊이 숙였다. 햇빛이 눈부셔 눈이 시린 것인지, 아니면 가슴 언저리가 따끔거리는 것인지 알 수 없었다.
+그때, 펜을 쥐고 있던 지아의 손끝에 힘이 풀리며 볼펜이 책상 위를 구르는 소리가 작게 울렸다. 지아가 당황하여 얼른 볼펜을 잡으려 손을 뻗었으나, 그 순간 바로 앞자리에서 미세한 움직임이 느껴졌다.
+독현이 고개를 까딱이며 천천히 몸을 돌렸다. 그는 여전히 무심하고 싸늘한 표정이었지만, 지아를 향한 그의 시선은 어제의 날 선 공격성과는 또 다른, 설명하기 힘든 기류를 품고 있었다.
+
+강독현 : ...뭘 봐.
+
+독현의 낮은 목소리가 책상을 타고 낮게 깔렸다. 그는 다시 앞을 향해 몸을 돌리려 했으나, 지아와 눈이 마주친 짧은 순간 동안 그의 미간이 아주 잠깐 일그러졌다.`,
+    };
+    const exampleInputEn = {
+      improvement: "The narration is too long.",
+      og_intro: `One week had passed since the wedding.
+
+Jia now had to live in the same house as Dokhyeon, in the bedroom directly across from his. Their parents were away on a trip, leaving the two of them alone in the vast mansion.
+
+Late at night, the front door opened quietly.
+
+Jia entered on crutches, with Dawit beside her carrying her bag. Dokhyeon was leaning against the railing at the top of the stairs. His gaze settled on the two of them.
+
+Kang Dokhyeon: Walking her all the way to someone else’s house. You must have a lot of free time these days.
+
+Without responding, Dawit set Jia’s bag down.
+
+The moment she heard Dokhyeon’s voice, Jia’s shoulders visibly stiffened.
+
+Park Dawit: She fell at school. I didn’t want her going home alone.
+
+Kang Dokhyeon: Did I ask?
+
+As Dokhyeon descended the stairs, Jia tightened her grip on her crutches.
+
+The small movement irritated him. So did the fact that she could not even look at him, yet had quietly accepted Dawit’s help.
+
+Dawit moved half a step in front of Jia.
+
+Park Dawit: Just leave her alone tonight.
+
+After a brief silence, Dokhyeon gave a crooked smile.
+
+Kang Dokhyeon: Why? Are you her guardian now?
+
+Their gazes locked.
+
+Standing between them, Jia could barely bring herself to breathe.
+
+This time, Dokhyeon looked directly at her.
+
+Kang Dokhyeon: You tell me. Why did he follow you all the way here?`,
+      og_chatHistory: `Jia’s low voice seeped weakly through the silence of the living room.
+
+The tremor in it was directed neither at Dawit nor at Dokhyeon. It was a desperate attempt to escape the situation itself, as though she could deny everything happening around her simply by making herself smaller.
+
+Her eyes remained fixed on the floor. Her bloodless fingers clutched the handle of her crutch with growing desperation, as though it were the only part of the world she could still hold onto.
+
+At the sight of her fragile figure, Dokhyeon’s brow drew into a vicious frown.
+
+The word “sorry” coming from Jia’s mouth—and the way she seemed to be pushing him away—stirred an inexplicable sense of irritation inside him.
+
+A twisted thought passed through his mind. It might have been easier to tolerate if she had clung to him and burst into tears rather than hiding behind Dawit to escape him.
+
+Dokhyeon stopped at the bottom of the stairs and looked down at Jia like a predator watching wounded prey.
+
+Cold anger mixed with mockery in his eyes.
+
+Kang Dokhyeon: Sorry? Are you apologizing to me right now?
+
+Dokhyeon descended another step, slowly.
+
+The steady sound of his shoes striking the marble floor pressed against Jia’s heartbeat.
+
+Kang Dokhyeon: Ha. What a joke. Who do you think you are, going wherever he tells you and saying whatever he wants you to say? Is this your house? Or is that bastard your owner now?
+
+Dokhyeon’s cutting words struck Jia like sharp blows.
+
+She flinched, her entire body trembling. The movement caused one of her crutches to scrape lightly against the floor.
+
+Dawit’s eyes darkened at the sound.
+
+He maintained his position in front of Jia and stared coldly at Dokhyeon.
+
+Park Dawit: That’s enough. You’re going too far.
+
+At Dawit’s calm but forceful warning, Dokhyeon turned his head.
+
+His mocking gaze lingered on Dawit’s face.
+
+Kang Dokhyeon: Enough? Hey, Park Dawit. Are you taking her side now? You have no reason to interfere. This is a family matter.
+
+Dokhyeon turned back toward Jia and stared through her.
+
+The way her terrified eyes still tried to avoid him was unbearable.
+
+Lee Jia: ...I was talking to Park Dawit... Dawit... I’m okay now, so go home... There’s no reason for you to...
+
+=====
+
+Jia’s murmuring voice called Dawit’s name with desperate urgency.
+
+She was grateful for the warmth of someone trying to protect her, yet that warmth felt so painfully bright that she could not bring herself to face it.
+
+Her plea for Dawit to leave—to please abandon her in the middle of this tragic scene—held something beyond a tremor. It carried the desperation of a muted scream.
+
+She forced her unsteady gaze past Dawit’s shoulder, doing everything she could to avoid Dokhyeon’s cold stare.
+
+But her rejection became the final spark that severed Dokhyeon’s restraint.
+
+She had ignored him completely, called another man’s name in front of him, and told that man to leave.
+
+A dangerous light flashed in Dokhyeon’s eyes.
+
+It was more than anger. It was a violent fracture of humiliation and possessiveness rising from somewhere beneath his heart.
+
+Dokhyeon crossed the distance in several long strides and stopped directly in front of Jia.
+
+Dawit instinctively moved to shield her, but Dokhyeon ignored him and leaned close enough to fill Jia’s entire field of vision.
+
+His cold shadow swallowed her.
+
+Kang Dokhyeon: You were talking to Park Dawit?
+
+Dokhyeon repeated the question in a low voice.
+
+There was no mockery in it. The unnatural calmness made it even more chilling.
+
+He pressed his lips together as though suppressing something that might have been twisted satisfaction—or uncontrollable rage.
+
+Kang Dokhyeon: Ha. This is unbelievable. Are you messing with me right now? I’m standing right here, and he’s the only one you can see?
+
+Dokhyeon’s gaze dropped.
+
+It settled on Jia’s hand, still shaking as it gripped the crutch.
+
+He seemed to waver dangerously between the urge to crush each of those delicate fingers and the equally distorted desire to make the trembling stop.
+
+Kang Dokhyeon: What do you mean, you’re fine? You can barely use one of your legs, so stop pretending you’re strong. I told you to look at me. Why aren’t you answering?
+
+Park Dawit: Kang Dokhyeon, stop. You’re seriously crossing the line.
+
+Kang Dokhyeon: The line? Who are you to lecture me about my limits? Park Dawit, what are you planning to do after taking her out with you? Were you going to parade her around like this and beg people to pity her?
+
+Dokhyeon snapped at Dawit before turning his glare back down toward Jia.
+
+Jealousy and rage twisted together in his eyes.
+
+Lee Jia: ...`,
+    };
+    const loadingVisualSources = {
+      working: "/static/images/loading/prompt-working.gif",
+      ready: "/static/images/loading/prompt-ready.gif",
+      failed: "/static/images/loading/prompt-failed.gif",
+    };
+
+    function setLoadingVisual(state) {
+      const source = loadingVisualSources[state];
+      if (!source) return;
+      loadingStateImage.src = source;
+      loadingStateImage.dataset.state = state;
+    }
+
+    function updateTextarea(textarea) {
+      const counter = textarea.parentElement.querySelector(".character-count");
+      const locale = currentLanguage === "en" ? "en-US" : "ko-KR";
+      counter.textContent =
+        `${textarea.value.length.toLocaleString(locale)}${t("counter.unit")}`;
+
+      textarea.style.height = "auto";
+      textarea.style.height = `${Math.max(textarea.scrollHeight, 150)}px`;
+    }
+
+    textareas.forEach((textarea) => {
+      textarea.addEventListener("input", () => updateTextarea(textarea));
+    });
+
+    function showError(message) {
+      formError.textContent = message;
+      formError.hidden = false;
+    }
+
+    function clearError() {
+      formError.textContent = "";
+      formError.hidden = true;
+    }
+
+    function showCompileError(message) {
+      compileError.textContent = message;
+      compileError.hidden = false;
+    }
+
+    function clearCompileError() {
+      compileError.textContent = "";
+      compileError.hidden = true;
+    }
+
+    function showTestError(message) {
+      testError.textContent = message;
+      testError.hidden = false;
+    }
+
+    function clearTestError() {
+      testError.textContent = "";
+      testError.hidden = true;
+    }
+
+    function apiErrorMessage(data, fallbackKey) {
+      if (data && typeof data.code === "string") {
+        const localized = translations[currentLanguage][`error.${data.code}`];
+        if (localized) return localized;
+      }
+      return data?.error || t(fallbackKey);
+    }
+
+    function setWorkflowLanguageLocked(isLocked) {
+      workflowLanguageLocked = isLocked;
+      languageButtons.forEach((button) => {
+        button.disabled = isLocked;
+      });
+    }
+
+    function setLoading(isLoading) {
+      submitButton.disabled = isLoading;
+      clearButton.disabled = isLoading;
+      loadExampleButton.disabled = isLoading;
+      loadExampleButtonEn.disabled = isLoading;
+      submitButton.setAttribute("aria-busy", String(isLoading));
+      submitLabel.textContent = isLoading
+        ? t("action.improving")
+        : t("action.improve");
+    }
+
+    function showLoadingScreen() {
+      pageHeader.hidden = true;
+      form.hidden = true;
+      resultPanel.hidden = true;
+      evaluationPanel.hidden = true;
+      evaluationNavigation.hidden = true;
+      loadingScreen.hidden = false;
+      compileForm.hidden = false;
+      window.scrollTo({ top: 0, behavior: "auto" });
+      requiredPrompts.focus({ preventScroll: true });
+    }
+
+    function hideLoadingScreen() {
+      loadingScreen.hidden = true;
+      pageHeader.hidden = false;
+      form.hidden = false;
+    }
+
+    function preparePromptListStep() {
+      analysisData = null;
+      compiledData = null;
+      loadingCard.classList.remove("is-ready");
+      setLoadingVisual("working");
+      compileForm.hidden = false;
+      loadingTitle.textContent = t("loading.improving_title");
+      loadingDescriptionText.textContent = t("loading.improving_description");
+      requiredPrompts.disabled = false;
+      requiredPrompts.value = "";
+      updateTextarea(requiredPrompts);
+      compileButton.disabled = true;
+      compileButton.setAttribute("aria-busy", "false");
+      compileButtonLabel.textContent = t("compile.preparing");
+      compileStatus.textContent = t("compile.waiting");
+      clearCompileError();
+    }
+
+    function markPromptListReady() {
+      loadingCard.classList.add("is-ready");
+      setLoadingVisual("ready");
+      loadingTitle.textContent = t("loading.analysis_ready_title");
+      loadingDescriptionText.textContent = t("loading.analysis_ready_description");
+      compileButton.disabled = false;
+      compileButtonLabel.textContent = t("compile.create");
+      compileStatus.textContent = t("compile.rules");
+    }
+
+    function setCompiling(isCompiling) {
+      requiredPrompts.disabled = isCompiling;
+      compileButton.disabled = isCompiling;
+      compileButton.setAttribute("aria-busy", String(isCompiling));
+
+      if (isCompiling) {
+        loadingCard.classList.remove("is-ready");
+        setLoadingVisual("working");
+        loadingTitle.textContent = t("loading.compiling_title");
+        loadingDescriptionText.textContent = t("loading.compiling_description");
+        compileButtonLabel.textContent = t("compile.creating");
+        compileStatus.textContent = t("compile.processing");
+      } else {
+        loadingCard.classList.add("is-ready");
+        setLoadingVisual("failed");
+        loadingTitle.textContent = t("loading.compile_failed_title");
+        loadingDescriptionText.textContent = t("loading.compile_failed_description");
+        compileButtonLabel.textContent = t("compile.retry");
+        compileStatus.textContent = t("compile.rules");
+      }
+    }
+
+    function setTestLoading(isLoading) {
+      testSubmitButton.disabled = isLoading;
+      testSubmitButton.setAttribute("aria-busy", String(isLoading));
+      testSubmitLabel.textContent = isLoading
+        ? t("action.testing")
+        : t("action.test");
+    }
+
+    function showTestLoading(title, description) {
+      pageHeader.hidden = true;
+      form.hidden = true;
+      resultPanel.hidden = true;
+      evaluationPanel.hidden = true;
+      evaluationNavigation.hidden = true;
+      loadingScreen.hidden = false;
+      compileForm.hidden = true;
+      loadingCard.classList.remove("is-ready");
+      setLoadingVisual("working");
+      loadingTitle.textContent = title;
+      loadingDescriptionText.textContent = description;
+      window.scrollTo({ top: 0, behavior: "auto" });
+    }
+
+    function restoreTestInputScreen() {
+      loadingScreen.hidden = true;
+      compileForm.hidden = false;
+      pageHeader.hidden = true;
+      form.hidden = true;
+      evaluationPanel.hidden = true;
+      evaluationNavigation.hidden = true;
+      resultPanel.hidden = false;
+      testDataForm.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function updateOutputPreview(preview) {
+      const toggleButton = document.querySelector(
+        `[data-expand-target="${preview.id}"]`
+      );
+      preview.classList.remove("is-expanded", "has-overflow");
+      toggleButton.setAttribute("aria-expanded", "false");
+      toggleButton.textContent = t("action.expand");
+
+      const hasOverflow = preview.scrollHeight > preview.clientHeight + 1;
+      preview.classList.toggle("has-overflow", hasOverflow);
+      toggleButton.hidden = !hasOverflow;
+    }
+
+    function showFinalResults(data) {
+      compiledData = data;
+      finalPromptOutput.textContent = data.final_prompt;
+      finalIntroOutput.textContent = data.final_intro;
+      testDataForm.reset();
+      clearTestError();
+      evaluationPanel.hidden = true;
+      evaluationNavigation.hidden = true;
+      testInputData = {
+        test_chat_context: "",
+        test_user_input: "",
+      };
+      testDataForm.querySelectorAll("textarea").forEach(updateTextarea);
+      hideLoadingScreen();
+      resultPanel.hidden = false;
+
+      requestAnimationFrame(() => {
+        outputPreviews.forEach(updateOutputPreview);
+        resultPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+
+    function renderList(listElement, items) {
+      listElement.replaceChildren();
+      items.forEach((item) => {
+        const listItem = document.createElement("li");
+        listItem.textContent = item;
+        listElement.appendChild(listItem);
+      });
+    }
+
+    function showEvaluationResults(generatedTests, report) {
+      generatedTests.original_tests.forEach((dialogue, index) => {
+        document.getElementById(`original-test-output-${index + 1}`).textContent =
+          dialogue;
+      });
+      generatedTests.improved_tests.forEach((dialogue, index) => {
+        document.getElementById(`improved-test-output-${index + 1}`).textContent =
+          dialogue;
+      });
+
+      const metricFields = [
+        "metric",
+        "criterion",
+        "original_1",
+        "original_2",
+        "original_3",
+        "original_summary",
+        "improved_1",
+        "improved_2",
+        "improved_3",
+        "improved_summary",
+        "change",
+      ];
+      reportMetricsBody.replaceChildren();
+      report.metrics.forEach((metric) => {
+        const row = document.createElement("tr");
+        metricFields.forEach((field) => {
+          const cell = document.createElement("td");
+          cell.textContent = metric[field] || "";
+          row.appendChild(cell);
+        });
+        reportMetricsBody.appendChild(row);
+      });
+
+      renderList(comparisonSummaryList, report.comparison_summary);
+      successVerdict.textContent = report.success.verdict;
+      successRationale.textContent = report.success.rationale;
+      renderList(residualProblemsList, report.residual_problems);
+      revisionVerdict.textContent = report.revision.verdict;
+      revisionRationale.textContent = report.revision.rationale;
+
+      loadingScreen.hidden = true;
+      compileForm.hidden = false;
+      pageHeader.hidden = true;
+      form.hidden = true;
+      resultPanel.hidden = true;
+      evaluationPanel.hidden = false;
+      evaluationNavigation.hidden = false;
+
+      requestAnimationFrame(() => {
+        document
+          .querySelectorAll(".dialogue-preview")
+          .forEach(updateOutputPreview);
+        evaluationPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+
+    function goBackToTestScreen() {
+      loadingScreen.hidden = true;
+      compileForm.hidden = false;
+      evaluationPanel.hidden = true;
+      evaluationNavigation.hidden = true;
+      pageHeader.hidden = false;
+      form.hidden = false;
+      resultPanel.hidden = false;
+
+      requestAnimationFrame(() => {
+        resultPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+
+    function resetWorkflowToStart() {
+      form.reset();
+      compileForm.reset();
+      testDataForm.reset();
+      textareas.forEach(updateTextarea);
+
+      clearError();
+      clearCompileError();
+      clearTestError();
+      preparePromptListStep();
+      setWorkflowLanguageLocked(false);
+      initialPayload = null;
+      testInputData = {
+        test_chat_context: "",
+        test_user_input: "",
+      };
+
+      setLoading(false);
+      setTestLoading(false);
+      loadingScreen.hidden = true;
+      evaluationPanel.hidden = true;
+      evaluationNavigation.hidden = true;
+      resultPanel.hidden = true;
+      pageHeader.hidden = false;
+      form.hidden = false;
+      finalPromptOutput.textContent = "";
+      finalIntroOutput.textContent = "";
+      reportMetricsBody.replaceChildren();
+      comparisonSummaryList.replaceChildren();
+      residualProblemsList.replaceChildren();
+      document
+        .querySelectorAll(
+          '[id^="original-test-output-"], [id^="improved-test-output-"]'
+        )
+        .forEach((output) => {
+          output.textContent = "";
+        });
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      textareas[0].focus({ preventScroll: true });
+    }
+
+    async function copyOutput(button) {
+      const output = document.getElementById(button.dataset.copyTarget);
+      const text = output.textContent;
+      if (!text) return;
+
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const temporaryTextarea = document.createElement("textarea");
+        temporaryTextarea.value = text;
+        temporaryTextarea.style.position = "fixed";
+        temporaryTextarea.style.opacity = "0";
+        document.body.appendChild(temporaryTextarea);
+        temporaryTextarea.select();
+        document.execCommand("copy");
+        temporaryTextarea.remove();
+      }
+
+      const label = button.querySelector(".copy-button-label");
+      label.textContent = t("action.copied");
+      window.setTimeout(() => {
+        label.textContent = t("action.copy");
+      }, 1600);
+    }
+
+    copyButtons.forEach((button) => {
+      button.addEventListener("click", async () => {
+        try {
+          await copyOutput(button);
+        } catch {
+          const label = button.querySelector(".copy-button-label");
+          label.textContent = t("action.copy_failed");
+          window.setTimeout(() => {
+            label.textContent = t("action.copy");
+          }, 1600);
+        }
+      });
+    });
+
+    expandButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const preview = document.getElementById(button.dataset.expandTarget);
+        const willExpand = !preview.classList.contains("is-expanded");
+        preview.classList.toggle("is-expanded", willExpand);
+        button.setAttribute("aria-expanded", String(willExpand));
+        button.textContent = willExpand
+          ? t("action.collapse")
+          : t("action.expand");
+
+        if (!willExpand) {
+          preview.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      });
+    });
+
+    testDataForm.addEventListener("input", () => {
+      testInputData = Object.fromEntries(new FormData(testDataForm).entries());
+    });
+
+    testDataForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      clearTestError();
+
+      if (!initialPayload || !analysisData || !compiledData) {
+        showTestError(t("error.TEST_NOT_READY"));
+        return;
+      }
+
+      testInputData = Object.fromEntries(new FormData(testDataForm).entries());
+      const testUserInput = (testInputData.test_user_input || "").trim();
+      if (!testUserInput) {
+        showTestError(t("error.TEST_INPUT_REQUIRED"));
+        document.getElementById("test-user-input").focus();
+        return;
+      }
+
+      const diagnosis = analysisData.diagnosis || {};
+      if (
+        !Array.isArray(diagnosis.improvement_goals) ||
+        !diagnosis.improvement_goals.length ||
+        !Array.isArray(diagnosis.prohibited_patterns) ||
+        !diagnosis.prohibited_patterns.length
+      ) {
+        showTestError(t("error.DIAGNOSIS_MISSING"));
+        return;
+      }
+
+      const generationPayload = {
+        improvement: initialPayload.improvement,
+        og_prompt: initialPayload.og_prompt,
+        og_intro: initialPayload.og_intro,
+        final_prompt: compiledData.final_prompt,
+        final_intro: compiledData.final_intro,
+        test_chat_context: (testInputData.test_chat_context || "").trim(),
+        test_user_input: testUserInput,
+        output_language: initialPayload.output_language,
+      };
+
+      setTestLoading(true);
+      showTestLoading(
+        t("loading.generating_tests_title"),
+        t("loading.generating_tests_description")
+      );
+
+      try {
+        const generationResponse = await fetch("/api/generate-tests", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(generationPayload),
+        });
+
+        let generatedTests;
+        try {
+          generatedTests = await generationResponse.json();
+        } catch {
+          throw new Error(t("error.TEST_RESPONSE_READ"));
+        }
+
+        if (!generationResponse.ok) {
+          throw new Error(apiErrorMessage(generatedTests, "error.TEST_GENERATION_FAILED"));
+        }
+
+        if (
+          !Array.isArray(generatedTests.original_tests) ||
+          generatedTests.original_tests.length !== 3 ||
+          !Array.isArray(generatedTests.improved_tests) ||
+          generatedTests.improved_tests.length !== 3
+        ) {
+          throw new Error(t("error.TESTS_MISSING"));
+        }
+
+        showTestLoading(
+          t("loading.evaluating_title"),
+          t("loading.evaluating_description")
+        );
+
+        const evaluationResponse = await fetch("/api/evaluate-tests", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            improvement: initialPayload.improvement,
+            improvement_goals: diagnosis.improvement_goals,
+            prohibited_patterns: diagnosis.prohibited_patterns,
+            original_tests: generatedTests.original_tests,
+            improved_tests: generatedTests.improved_tests,
+            output_language: initialPayload.output_language,
+          }),
+        });
+
+        let evaluationData;
+        try {
+          evaluationData = await evaluationResponse.json();
+        } catch {
+          throw new Error(t("error.EVALUATION_RESPONSE_READ"));
+        }
+
+        if (!evaluationResponse.ok) {
+          throw new Error(apiErrorMessage(evaluationData, "error.EVALUATION_FAILED"));
+        }
+
+        if (
+          !evaluationData.report ||
+          !Array.isArray(evaluationData.report.metrics) ||
+          !evaluationData.report.metrics.length
+        ) {
+          throw new Error(t("error.EVALUATION_MISSING"));
+        }
+
+        showEvaluationResults(generatedTests, evaluationData.report);
+      } catch (error) {
+        const message =
+          error instanceof TypeError
+            ? t("error.NETWORK")
+            : error.message;
+        restoreTestInputScreen();
+        showTestError(message);
+      } finally {
+        setTestLoading(false);
+      }
+    });
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      clearError();
+      resultPanel.hidden = true;
+
+      setWorkflowLanguageLocked(true);
+      initialPayload = {
+        ...Object.fromEntries(new FormData(form).entries()),
+        output_language: currentLanguage,
+      };
+      preparePromptListStep();
+      setLoading(true);
+      showLoadingScreen();
+
+      try {
+        const response = await fetch("/api/analyze", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(initialPayload),
+        });
+
+        let data;
+        try {
+          data = await response.json();
+        } catch {
+          throw new Error(t("error.RESPONSE_READ"));
+        }
+
+        if (!response.ok) {
+          throw new Error(apiErrorMessage(data, "error.ANALYZE_FAILED"));
+        }
+
+        if (
+          !data.diagnosis ||
+          typeof data.improved_prompt !== "string" ||
+          typeof data.improved_intro !== "string"
+        ) {
+          throw new Error(t("error.ANALYZE_EMPTY"));
+        }
+
+        analysisData = data;
+        markPromptListReady();
+      } catch (error) {
+        const message =
+          error instanceof TypeError
+            ? t("error.NETWORK")
+            : error.message;
+        hideLoadingScreen();
+        setWorkflowLanguageLocked(false);
+        showError(message);
+        form.scrollIntoView({ behavior: "smooth", block: "end" });
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    compileForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      clearCompileError();
+
+      if (!analysisData || !initialPayload) {
+        showCompileError(t("error.ANALYZE_PENDING"));
+        return;
+      }
+
+      const requiredPromptValue = requiredPrompts.value.trim();
+      if (!requiredPromptValue) {
+        showCompileError(t("error.REQUIRED_PROMPTS"));
+        requiredPrompts.focus();
+        return;
+      }
+
+      const compilePayload = {
+        improvement: initialPayload.improvement,
+        diagnosis: analysisData.diagnosis,
+        improved_prompt: analysisData.improved_prompt,
+        improved_intro: analysisData.improved_intro,
+        required_prompts: requiredPromptValue,
+        output_language: initialPayload.output_language,
+      };
+
+      setCompiling(true);
+
+      try {
+        const response = await fetch("/api/compile", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(compilePayload),
+        });
+
+        let data;
+        try {
+          data = await response.json();
+        } catch {
+          throw new Error(t("error.RESPONSE_READ"));
+        }
+
+        if (!response.ok) {
+          throw new Error(apiErrorMessage(data, "error.COMPILE_FAILED"));
+        }
+
+        if (
+          typeof data.final_prompt !== "string" ||
+          !data.final_prompt ||
+          typeof data.final_intro !== "string" ||
+          !data.final_intro
+        ) {
+          throw new Error(t("error.COMPILE_EMPTY"));
+        }
+
+        showFinalResults(data);
+      } catch (error) {
+        const message =
+          error instanceof TypeError
+            ? t("error.NETWORK")
+            : error.message;
+        setCompiling(false);
+        showCompileError(message);
+      }
+    });
+
+    evaluationBackButton.addEventListener("click", goBackToTestScreen);
+    evaluationHomeButton.addEventListener("click", resetWorkflowToStart);
+
+    languageButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        setLanguage(button.dataset.language);
+      });
+    });
+
+    async function loadExample({
+      button,
+      language,
+      promptUrl,
+      exampleValues,
+      loadingKey,
+      originalLabel,
+    }) {
+      setLanguage(language);
+      loadExampleButton.disabled = true;
+      loadExampleButtonEn.disabled = true;
+      button.textContent = t(loadingKey);
+      clearError();
+
+      try {
+        const response = await fetch(promptUrl);
+        if (!response.ok) {
+          throw new Error(t("error.EXAMPLE_PROMPT_FAILED"));
+        }
+
+        const values = {
+          ...exampleValues,
+          og_prompt: (await response.text()).trim(),
+        };
+
+        Object.entries(values).forEach(([name, value]) => {
+          const textarea = form.elements.namedItem(name);
+          if (!(textarea instanceof HTMLTextAreaElement)) return;
+          textarea.value = value;
+          updateTextarea(textarea);
+        });
+
+        form.scrollIntoView({ behavior: "smooth", block: "start" });
+      } catch (error) {
+        showError(error.message || t("error.EXAMPLE_PROMPT_FAILED"));
+      } finally {
+        loadExampleButton.disabled = false;
+        loadExampleButtonEn.disabled = false;
+        button.textContent = originalLabel;
+      }
+    }
+
+    loadExampleButton.addEventListener("click", () => {
+      loadExample({
+        button: loadExampleButton,
+        language: "ko",
+        promptUrl: "/static/example-og-prompt.txt",
+        exampleValues: exampleInput,
+        loadingKey: "example.loading_ko",
+        originalLabel: "예시 입력 불러오기",
+      });
+    });
+
+    loadExampleButtonEn.addEventListener("click", () => {
+      loadExample({
+        button: loadExampleButtonEn,
+        language: "en",
+        promptUrl: "/static/example-og-prompt-en.txt",
+        exampleValues: exampleInputEn,
+        loadingKey: "example.loading_en",
+        originalLabel: "Load example input",
+      });
+    });
+
+    clearButton.addEventListener("click", () => {
+      if (!Array.from(textareas).some((textarea) => textarea.value)) return;
+      if (!window.confirm(t("confirm.clear"))) return;
+      resetWorkflowToStart();
+    });
+
+    applyTranslations();
+    textareas.forEach(updateTextarea);
+  </script>
+</body>
+</html>

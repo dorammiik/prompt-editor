@@ -1,0 +1,22 @@
+
+---
+
+## 개선 요청 사항
+
+{improvement}
+
+## 개선 목표
+
+{improvement_goals}
+
+## 금지 사항
+
+{prohibited_patterns}
+
+## 원본 테스트 대화
+
+{original_tests}
+
+## 개선 테스트 대화
+
+{improved_tests}

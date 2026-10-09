@@ -1,0 +1,9 @@
+
+## Output language contract
+
+- Write all user-visible result content in English.
+- Do not translate the English source material into Korean before analyzing or revising it.
+- Preserve proper nouns, character names, facts, and setting details exactly as supplied unless the requested improvement directly requires a change.
+- Keep every Korean heading, label, table header, separator, and delimiter required by the output template exactly unchanged because the server uses them as machine-readable markers.
+- Write the content beneath those markers in English, including diagnosis items, revised and final prompts, intro dialogue, generated test dialogue, evaluation metrics, verdict values, rationales, and remaining issues.
+- When a required Korean label is followed by a value, keep only the label in Korean and write the value in English.
