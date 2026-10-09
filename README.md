@@ -2,7 +2,7 @@
 
 **Language: 한국어 | English**
 
-📄 [기획안](https://app.notion.com/p/Character-chat-Prompt-Editor-3a9856fc07af804e8f22f3028575fcdf?source=copy_link) | 📄 [Dataset (EN)](https://app.notion.com/p/Product-Specification-Character-Chat-Prompt-Editor-a79856fc07af822ca08c8191278489a4?source=copy_link) | 📚 [Dataset (KO)](https://docs.google.com/spreadsheets/d/17gqW3UED_Fl9mr9UPCzbobPYpJAL6mkP3xsH6ADfFuo/edit?usp=sharing) | 📚 [Dataset (EN)](https://docs.google.com/spreadsheets/d/1tIvcCV1qE68o7VNaVK0bi4ROC-P8qqy-WTiaqtXHI9o/edit?usp=sharing)
+📄 [기획안](https://app.notion.com/p/Character-chat-Prompt-Editor-3a9856fc07af804e8f22f3028575fcdf?source=copy_link) | 📄 [Specification (EN)](https://app.notion.com/p/Product-Specification-Character-Chat-Prompt-Editor-a79856fc07af822ca08c8191278489a4?source=copy_link) | 📚 [Dataset (KO)](https://docs.google.com/spreadsheets/d/17gqW3UED_Fl9mr9UPCzbobPYpJAL6mkP3xsH6ADfFuo/edit?usp=sharing) | 📚 [Dataset (EN)](https://docs.google.com/spreadsheets/d/1tIvcCV1qE68o7VNaVK0bi4ROC-P8qqy-WTiaqtXHI9o/edit?usp=sharing)
 
 
 An AI-powered prompt improvement tool for character-chat creators.
